@@ -1,0 +1,22 @@
+{
+    "name": "hello-work",
+    "main": "index",
+    "bin": { "hellowork": "./bin/hellowork" },
+    "version": "0.0.1",
+    "description": "Simple job-queue framework for Node.js",
+    "tags": ["hello-work"],
+    "keywords": ["job", "queue", "worker"],
+    "author": "kazupon (kazuya kawaguchi) <kawakazu80@gmail.com>",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/kazupon/hello-work.git"
+    },
+    "dependencies": {
+    },
+    "devDependencies": {
+        "vows": ">= 0.5.11"
+    },
+    "engines": {
+        "node": ">= 0.5.9"
+    }
+}

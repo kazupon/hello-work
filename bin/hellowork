@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+
+//
+// import(s)
+//
+var Agent = require('../lib/agent');
+
+// TODO: 
+console.log('hellowork !!');
