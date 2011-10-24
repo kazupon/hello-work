@@ -73,13 +73,13 @@ suite.addBatch({
           },
           {
             "type": "file",
-            "filename": "./logs/system.log",
+            "filename": "./system.log",
             "maxLogSize": 1024,
             "backups": 3
           },
           {
             "type": "file",
-            "filename": "./logs/access.log",
+            "filename": "./access.log",
             "maxLogSize": 1024,
             "backups": 10,
             "category": "access"
