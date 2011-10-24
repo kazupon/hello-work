@@ -57,6 +57,26 @@ function withCases (cases) {
   return tests;
 }
 
+function withCommonTests (func) {
+  return withCases([
+    [ func, true, [ 'hello world' ] ],
+    [ func, true, [ 1 ] ],
+    [ func, true, [ null ] ],
+    [ func, true, [ undefined ] ],
+    [ func, true, [ function () {} ] ],
+    [ func, true, [ { hello: 'world' } ] ],
+    [ func, true, [ Array ] ],
+    [ func, true, [ new Error('error') ] ],
+    [ func, true, [ 'hello', 'world' ] ],
+    [ func, true, [ 1, 2 ] ],
+    [ func, true, [ 'hello', 2 ] ],
+    [ func, true, [ null, 'hello' ] ],
+    [ func, true, [ '%d', 1 ] ],
+    [ func, true, [ '%s', 'hello' ] ],
+    [ func, true, [ '%j', { hello: 'world' } ] ],
+    // TODO: should be check other parameter patterns.
+  ]);
+}
 
 //
 // test(s)
@@ -104,29 +124,10 @@ suite.addBatch({
     },
     // TODO: should be check other parameter patterns.
   },
-  'trace': withCases([
-    [ trace, true, [ 'hello world' ] ],
-    [ trace, true, [ 1 ] ],
-    [ trace, true, [ null ] ],
-    [ trace, true, [ undefined ] ],
-    [ trace, true, [ function () {} ] ],
-    [ trace, true, [ { hello: 'world' } ] ],
-    [ trace, true, [ Array ] ],
-    [ trace, true, [ new Error('error') ] ],
-    [ trace, true, [ 'hello', 'world' ] ],
-    [ trace, true, [ 1, 2 ] ],
-    [ trace, true, [ 'hello', 2 ] ],
-    [ trace, true, [ null, 'hello' ] ],
-    [ trace, true, [ '%d', 1 ] ],
-    [ trace, true, [ '%s', 'hello' ] ],
-    [ trace, true, [ '%j', { hello: 'world' } ] ],
-  ]),
-  /*
-  'trace': withArgumentAndReturn(trace, 'hello world', true),
-  'debug': withArgumentAndReturn(debug, 'hello world', true),
-  'info': withArgumentAndReturn(info, 'hello world', true),
-  'warn': withArgumentAndReturn(warn, 'hello world', true),
-  'error': withArgumentAndReturn(error, 'hello world', true),
-  'fatal': withArgumentAndReturn(fatal, 'hello world', true),
-  */
+  'trace': withCommonTests(trace),
+  'debug': withCommonTests(debug),
+  'info': withCommonTests(info),
+  'warn': withCommonTests(warn),
+  'error': withCommonTests(error),
+  'fatal': withCommonTests(fatal),
 }).export(module);
