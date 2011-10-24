@@ -64,6 +64,12 @@ function withCases (cases) {
 
 var suite = vows.describe('logger.js tests');
 suite.addBatch({
+  'setLevel': withCases([
+    [ setLevel, true, [ 'DEBUG' ] ],
+    [ setLevel, false, [ 1 ] ],
+    [ setLevel, false, [ null ] ],
+    // TODO: should be check other parameter patterns.
+  ]), 
   'configure': {
     'with specific setting object': {
       topic: configure({
