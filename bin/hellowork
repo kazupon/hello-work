@@ -3,12 +3,13 @@
 //
 // import(s)
 //
+var assert = require('../lib/util').assert;
 var Agent = require('../lib/agent').Agent;
 var logger = require('../lib/logger');
 
 
 // parse command line
-var options = (function () { 
+function parseOptions (args, callback) {
   var options = {
     port: 20000,
     debug: true,
@@ -19,7 +20,6 @@ var options = (function () {
     options['debug'] = false;
   }
 
-  var args = process.argv.slice(2);
   while (args.length) {
     var arg = args.shift();
     switch (arg) {
@@ -39,80 +39,92 @@ var options = (function () {
     }
   }
 
-  return options;
-})();
-
-console.log('options : %j', options);
+  callback(options);
+}
 
 
 // logger specific settings
+function configureLogger (options, callback) {
+  var appenders = [];
+  if (options.debug) {
+    appenders.push({
+      type: 'console',
+    });
+  }
 
-var appenders = [];
-if (options.debug) {
-  appenders.push({
-    type: 'console',
-  });
+  if (options.log !== '') {
+    appenders.push({
+      type: 'file',
+      filename: options.log,
+      maxLogSize: 1024 * 1024 * 5,
+      backups: 3
+    });
+  }
+
+  if (appenders.length > 0) {
+    logger.configure({
+      appenders: appenders,
+    });
+    logger.setLevel((options.debug ? 'DEBUG' : 'INFO'));
+  }
+
+  callback();
 }
 
-if (options.log !== '') {
-  appenders.push({
-    type: 'file',
-    filename: options.log,
-    maxLogSize: 1024 * 1024 * 5,
-    backups: 3
+
+//
+// main
+//
+
+parseOptions(process.argv.slice(2), function (options) {
+  assert(options);
+
+  configureLogger(options, function () {
+
+    var agent = new Agent();
+    Object.defineProperty(agent, 'DEBUG', {
+      value: options.debug,
+    });
+
+    agent.start(options.port, function () {
+      logger.info('hellowork server listening on port %d ...', options.port); 
+
+      agent.on('error', function (err) {
+        logger.error('occred error : %s (%d)', err.message, err.code);
+        logger.debug('stack : %j', err.stack); 
+      });
+
+    });
+
+    agent.on('stop', function () {
+      logger.info('... stop hellowork server');
+    });
+
+
+    process.stdin.resume();
+
+
+    function abort () {
+      agent.stop();
+      process.exit(1);
+    }
+
+    process.on('SIGINT', function () {
+      abort();
+    });
+    process.on('SIGQUIT', function () {
+      abort();
+    });
+    process.on('SIGTERM', function () {
+      abort();
+    });
+
+    process.on('uncaughtException', function (err) {
+      logger.fatal('Occured `uncaughtException` : %s \n %s', err.message, err.stack);
+      logger.fatal('Please report this bug.');
+      abort();
+    });
+
   });
-}
-
-if (appenders.length > 0) {
-  logger.configure({
-    appenders: appenders,
-  });
-  logger.setLevel((options.debug ? 'DEBUG' : 'INFO'));
-}
-
-
-var agent = new Agent();
-
-Object.defineProperty(agent, 'DEBUG', {
-  value: options.debug,
-});
-
-agent.start(options.port, function () {
-  logger.info('hellowork server listening on port %d ...', options.port); 
-
-  agent.on('error', function (err) {
-    logger.error('occred error : %s (%d)', err.message, err.code);
-    logger.debug('stack : %j', err.stack); 
-  });
-
-});
-
-agent.on('stop', function () {
-  logger.info('... stop hellowork server');
-});
-
-
-process.stdin.resume();
-
-
-function abort () {
-  agent.stop();
-  process.exit(1);
-}
-
-process.on('SIGINT', function () {
-  abort();
-});
-process.on('SIGQUIT', function () {
-  abort();
-});
-process.on('SIGTERM', function () {
-  abort();
-});
-
-process.on('uncaughtException', function (err) {
-  logger.fatal('Occured `uncaughtException` : %s \n %s', err.message, err.stack);
-  logger.fatal('Please report this bug.');
-  abort();
 });
 
