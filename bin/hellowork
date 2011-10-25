@@ -3,6 +3,8 @@
 //
 // import(s)
 //
+var fs = require('fs');
+var path = require('path');
 var assert = require('../lib/util').assert;
 var Agent = require('../lib/agent').Agent;
 var logger = require('../lib/logger');
@@ -16,30 +18,34 @@ function parseOptions (args, callback) {
     log: '',
   };
 
-  if (process.env.NODE_ENV === 'production') {
-    options['debug'] = false;
-  }
-
-  while (args.length) {
-    var arg = args.shift();
-    switch (arg) {
-      case '-p':
-      case '--port':
-        if (arg = args.shift()) {
-          options['port'] = parseInt(arg, 10);
-        }
-        break;
-      case '--log':
-        if (arg = args.shift()) {
-          options['log'] = arg;
-        }
-        break;
-      default:
-        break;
+  try {
+    if (process.env.NODE_ENV === 'production') {
+      options['debug'] = false;
     }
-  }
 
-  callback(options);
+    while (args.length) {
+      var arg = args.shift();
+      switch (arg) {
+        case '-p':
+        case '--port':
+          if (arg = args.shift()) {
+            options['port'] = parseInt(arg, 10);
+          }
+          break;
+        case '--log':
+          if (arg = args.shift()) {
+            options['log'] = arg;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    callback(null, options);
+  } catch (e) {
+    callback(e);
+  }
 }
 
 
@@ -52,23 +58,45 @@ function configureLogger (options, callback) {
     });
   }
 
-  if (options.log !== '') {
-    appenders.push({
-      type: 'file',
-      filename: options.log,
-      maxLogSize: 1024 * 1024 * 5,
-      backups: 3
-    });
-  }
+  try {
+    var ret;
+    if (options.log !== '') {
+      if (!path.existsSync(options.log)) {
+        var logger_dir = path.dirname(options.log);
+        if (!path.existsSync(logger_dir)) {
+          ret = fs.mkdirSync(logger_dir, 0777);
+          if (ret) {
+            callback({
+              message: 'Faild log directory error',
+              code: ret,
+            });
+            return;
+          }
+        }
+      }
+      appenders.push({
+        type: 'file',
+        filename: options.log,
+        maxLogSize: 1024 * 1024 * 5,
+        backups: 3
+      });
+    }
 
-  if (appenders.length > 0) {
-    logger.configure({
-      appenders: appenders,
-    });
-    logger.setLevel((options.debug ? 'DEBUG' : 'INFO'));
-  }
+    if (appenders.length > 0) {
+      if (!logger.configure({ appenders: appenders, }) || 
+          !logger.setLevel((options.debug ? 'DEBUG' : 'INFO'))) {
+        callback({
+          message: 'Faild logger settings',
+        });
+        return;
+      }
+    }
+    callback();
 
-  callback();
+  } catch (e) {
+    console.error(e.message);
+    callback(e);
+  }
 }
 
 
@@ -76,10 +104,18 @@ function configureLogger (options, callback) {
 // main
 //
 
-parseOptions(process.argv.slice(2), function (options) {
+parseOptions(process.argv.slice(2), function (err, options) {
+  if (err) {
+    process.exit(1);
+    return;
+  }
   assert(options);
 
-  configureLogger(options, function () {
+  configureLogger(options, function (err) {
+    if (err) {
+      process.exit(1);
+      return;
+    }
 
     var agent = new Agent();
     Object.defineProperty(agent, 'DEBUG', {
@@ -100,11 +136,9 @@ parseOptions(process.argv.slice(2), function (options) {
       logger.info('... stop hellowork server');
     });
 
-
     process.stdin.resume();
 
-
-    function abort () {
+    var abort = function () {
       agent.stop();
       process.exit(1);
     }
@@ -125,6 +159,7 @@ parseOptions(process.argv.slice(2), function (options) {
       abort();
     });
 
-  });
-});
+  }); // end of configureLogger
+
+}); // end of parseOptions
 
