@@ -124,12 +124,11 @@ parseOptions(process.argv.slice(2), function (err, options) {
 
     agent.start(options.port, function () {
       logger.info('hellowork server listening on port %d ...', options.port); 
+    });
 
-      agent.on('error', function (err) {
-        logger.error('occred error : %s (%d)', err.message, err.code);
-        logger.debug('stack : %j', err.stack); 
-      });
-
+    agent.on('error', function (err) {
+      logger.error('occred error : %s (%d)', err.message, err.code);
+      logger.debug('stack : %j', err.stack); 
     });
 
     agent.on('stop', function () {
