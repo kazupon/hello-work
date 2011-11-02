@@ -19,7 +19,12 @@ client.port = 20000;
 
 
 // connect to server.
-clinet.connect(/* { host: 'localhost', port: 20000, }, */function () { // on('connect', function () { ... })
+clinet.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on('connect', function () { ... })
+
+  // error handling
+  if (err) {
+    // ...
+  }
 
   // general sample.
   var add_task = client.do({ // return task.
@@ -98,7 +103,11 @@ clinet.connect(/* { host: 'localhost', port: 20000, }, */function () { // on('co
 
 process.on('exit', function (code, signal) {
   // disconnect from server.
-  client.disconnect(function () { // on('disconnect', function () { ... });
+  client.disconnect(function (err) { // on('disconnect', function () { ... });
+    // error handling
+    if (err) { 
+      // ...
+    }
     console.log('disconnect');
   });
 });

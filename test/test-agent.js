@@ -26,7 +26,6 @@ suite.addBatch({
       topic: function () {
         var agent = new Agent();
         agent.start(20000, this.callback);
-        return agent;
       },
       'should be callback': function (topic) {
         assert.isUndefined(topic);
