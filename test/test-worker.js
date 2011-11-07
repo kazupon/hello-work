@@ -24,11 +24,17 @@ var suite = vows.describe('worker.js tests');
 suite.addBatch({
   'A `Worker` instacne': {
     topic: new Worker(),
-    'should `not have` host property': function (topic) {
-      assert.isUndefined(topic.host);
+    'should be `not null`': function (topic) {
+      assert.ok(topic);
     },
-    'should `not have` port property': function (topic) {
-      assert.isUndefined(topic.port);
+    'should be `null` host property': function (topic) {
+      assert.isNull(topic.host);
+    },
+    'should be `null` port property': function (topic) {
+      assert.isNull(topic.port);
+    },
+    'should be `worker` type property': function (topic) {
+      assert.equal(topic.type, 'worker');
     },
   },
 }).export(module);
