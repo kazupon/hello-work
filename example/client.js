@@ -6,24 +6,17 @@
 var Client = require('hello-work').Client;
 
 
-// create client instance with 'host' and 'port' options.
-var client = new Client({
-  host: 'localhost',
-  port: 20000,
-});
+// create client instance.
+var client = new Client();
 
 
-// set 'host' and 'port' with property.
-client.host = 'localhost';
-client.port = 20000;
-
-
-// connect to server.
-clinet.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on('connect', function () { ... })
+// connect to server, with port and host parameter.
+clinet.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on('connect', function (err) { ... })
 
   // error handling
   if (err) {
-    // ...
+    // todo ...
+    return;
   }
 
   // general sample.

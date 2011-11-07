@@ -6,20 +6,17 @@
 var Worker = require('hello-work').Worker;
 
 
-// create worker instace with 'host' and 'port options.
-var worker = new Worker({
-  host: 'localhost',
-  port: 20000,
-});
+// create worker instace.
+var worker = new Worker();
 
+// connect to server, with host and port parameter.
+worker.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on('connect', function (err) { ... })
 
-// set 'host' and 'port' with property.
-worker.host = 'localhost';
-worker.port = 20000;
-
-
-// connect to server.
-worker.connect(/* { host: 'localhost', port: 20000, }, */function () { // on('connect', function () { ... })
+  // error handling
+  if (err) {
+    // todo ...
+    return;
+  }
 
   // general sample.
   var add = function (a, b) {
