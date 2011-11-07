@@ -13,7 +13,7 @@ var assert = require('assert');
 var EventEmitter = require('events').EventEmitter;
 var Agent = require('../lib/agent').Agent;
 var Client = require('../lib/client').Client;
-var Task = require('../lib/client').Task;
+var Job = require('../lib/common').Job;
 var whenServerRunning = require('./helper').whenServerRunning;
 var promiser = require('./helper').promiser;
 var emitter = require('./helper').emitter;
@@ -69,10 +69,7 @@ suite.addBatch({
       topic: function (client) {
         return client.do({
           func: 'add',
-          args: {
-            a: 2,
-            b: 2
-          }
+          args: { a: 2, b: 2 }
         });
       },
       '`do` method should returned `null`': function (topic) {
@@ -100,8 +97,8 @@ suite.addBatch({
             ns: '/hoge', func: 'add', args: { a: 1, b: 1 }, timeout: 1000
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `ns` abbrev options': {
@@ -110,8 +107,8 @@ suite.addBatch({
             func: 'add', args: { a: 1, b: 1 }, timeout: 1000
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `func` abbrev options': {
@@ -130,8 +127,8 @@ suite.addBatch({
             ns: '/hoge', func: 'add', timeout: 1000
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `timeoute` abbrev options': {
@@ -140,8 +137,8 @@ suite.addBatch({
             ns: '/hoge', func: 'add', args: { a: 1, b: 1 }
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `none`': {
@@ -158,8 +155,8 @@ suite.addBatch({
             ns: 0, func: 'add', args: { a: 1, b: 1 }
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `null` ns illegale option': {
@@ -168,8 +165,8 @@ suite.addBatch({
             ns: null, func: 'add', args: { a: 1, b: 1 }
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `object` ns illegale option': {
@@ -178,8 +175,8 @@ suite.addBatch({
             ns: {}, func: 'add', args: { a: 1, b: 1 }
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `empty string` ns illegale option': {
@@ -188,8 +185,8 @@ suite.addBatch({
             ns: '', func: 'add', args: { a: 1, b: 1 }
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `not path string` ns illegale option': {
@@ -198,8 +195,8 @@ suite.addBatch({
             ns: 'hello', func: 'add', args: { a: 1, b: 1 }
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `sub path string` ns option': {
@@ -208,8 +205,8 @@ suite.addBatch({
             ns: '/hoge/foo', func: 'add', args: { a: 1, b: 1 }
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `number` func illegale option': {
@@ -258,8 +255,8 @@ suite.addBatch({
             func: 'add', args: 22
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `null` args option': {
@@ -268,8 +265,8 @@ suite.addBatch({
             func: 'add', args: null 
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `empty object` args option': {
@@ -278,8 +275,8 @@ suite.addBatch({
             func: 'add', args: {}
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `string` args option': {
@@ -288,8 +285,8 @@ suite.addBatch({
             func: 'add', args: 'hello'
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `function` args option': {
@@ -298,8 +295,8 @@ suite.addBatch({
             func: 'add', args: function () { console.log('hoge'); }
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `negative number` timeout illegale option': {
@@ -308,8 +305,8 @@ suite.addBatch({
             func: 'add', args: { a: 1, b: 2 }, timeout: -10
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `float number` timeout option': {
@@ -318,8 +315,8 @@ suite.addBatch({
             func: 'add', args: { a: 1, b: 2 }, timeout: 10.00
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `null` timeout illegale option': {
@@ -328,8 +325,8 @@ suite.addBatch({
             func: 'add', args: { a: 1, b: 2 }, timeout: null
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `object` timeout illegale option': {
@@ -338,8 +335,8 @@ suite.addBatch({
             func: 'add', args: { a: 1, b: 2 }, timeout: {}
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `string` timeout illegale option': {
@@ -348,8 +345,8 @@ suite.addBatch({
             func: 'add', args: { a: 1, b: 2 }, timeout: 'hoge'
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
       'with specify `function` timeout illegale option': {
@@ -358,10 +355,10 @@ suite.addBatch({
             func: 'add', args: { a: 1, b: 2 }, timeout: function () {}
           });
         },
-        '`do` method should returned a `Task` object': function (topic) {
-          assert.instanceOf(topic, Task);
+        '`do` method should returned a `Job` object': function (topic) {
+          assert.instanceOf(topic, Job);
         },
       },
     },
-  },
+  }
 })).export(module);

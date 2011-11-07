@@ -13,7 +13,7 @@ var assert = require('assert');
 var EventEmitter = require('events').EventEmitter;
 var Agent = require('../lib/agent').Agent;
 var Worker = require('../lib/worker').Worker;
-var Job = require('../lib/worker').Job;
+var Job = require('../lib/common').Job;
 var whenServerRunning = require('./helper').whenServerRunning;
 var emitter = require('./helper').emitter;
 
