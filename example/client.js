@@ -21,7 +21,7 @@ clinet.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
 
   // general sample.
   var add_task = client.do({ // return task.
-    // namespace: '/', // if namespace do not specific, default namespace '/'
+    // ns: '/', // if namespace do not specific, default namespace '/'
     func: 'add', // function name.
     args: { // funciton arguments.
       a: 1,
@@ -37,7 +37,7 @@ clinet.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
 
   // timeout sample.
   var sub_task = lient.do({
-    namespace: '/ns1/', // namespace.
+    ns: '/ns1/', // namespace.
     func: 'sub',
     args: {
       a: 2,

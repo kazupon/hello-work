@@ -23,7 +23,7 @@ worker.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
     return a + b;
   };
   worker.regist({
-    // namespace: '/', // if namespace do not specific, default namespace is '/'
+    // ns: '/', // if namespace do not specific, default namespace is '/'
     func: 'add',
   }, function (job) {
     return add(job.args.a, job.args.b);
