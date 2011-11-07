@@ -13,26 +13,23 @@ var assert = require('assert');
 var EventEmitter = require('events').EventEmitter;
 var Agent = require('../lib/agent').Agent;
 var Client = require('../lib/client').Client;
+var Task = require('../lib/client').Task;
 var whenServerRunning = require('./helper').whenServerRunning;
+var promiser = require('./helper').promiser;
+var emitter = require('./helper').emitter;
 
 
 // 
 // test(s)
 // 
 
-function callConnect () {
+function callDo() {
   return function (options) {
     var ret = {};
-    var callback = true;
-    if (arguments[1]) {
-      callback = arguments[1];
-    }
     var promise = new EventEmitter();
     var client = new Client();
-    ret.count = 0;
     var onEmit = function (err) {
       ret.client = client;
-      ret.count++;
       process.nextTick(function () {
         err ? promise.emit('error', err, ret) : promise.emit('success', ret);
       });
@@ -42,7 +39,6 @@ function callConnect () {
     if (options) {
       args.push(options);
     }
-    args.push((callback ? onEmit : undefined));
     client.connect.apply(client, args);
     return promise;
   };
@@ -66,4 +62,306 @@ suite.addBatch({
       assert.equal(topic.type, 'client');
     },
   },
-}).export(module);
+}).addBatch({
+  'When not connect to server,': {
+    topic: new Client(),
+    'call `do`,': {
+      topic: function (client) {
+        return client.do({
+          func: 'add',
+          args: {
+            a: 2,
+            b: 2
+          }
+        });
+      },
+      '`do` method should returned `null`': function (topic) {
+        assert.isNull(topic);
+      },
+    },
+  },
+}).addBatch(whenServerRunning(20000, {
+  'check parameter,': {
+    topic: emitter(function (promise) {
+      var client = new Client();
+      client.connect(function (err) {
+        err ? promise.emit('error', err) : promise.emit('success', client);
+      });
+    }),
+    'call `do`': {
+      topic: function (client) {
+        return function (options) {
+          return client.do(options);
+        };
+      },
+      'with specify `all` options': {
+        topic: function (parent) {
+          return parent({
+            ns: '/hoge', func: 'add', args: { a: 1, b: 1 }, timeout: 1000
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `ns` abbrev options': {
+        topic: function (parent) {
+          return parent({
+            func: 'add', args: { a: 1, b: 1 }, timeout: 1000
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `func` abbrev options': {
+        topic: function (parent) {
+          return parent({
+            ns: '/hoge', args: { a: 1, b: 1 }, timeout: 1000
+          });
+        },
+        '`do` method should returned `null`': function (topic) {
+          assert.isNull(topic);
+        },
+      },
+      'with specify `args` abbrev options': {
+        topic: function (parent) {
+          return parent({
+            ns: '/hoge', func: 'add', timeout: 1000
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `timeoute` abbrev options': {
+        topic: function (parent) {
+          return parent({
+            ns: '/hoge', func: 'add', args: { a: 1, b: 1 }
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `none`': {
+        topic: function (parent) {
+          return parent();
+        },
+        '`do` method should returned `null`': function (topic) {
+          assert.isNull(topic);
+        },
+      },
+      'with specify `number` ns illegale option': {
+        topic: function (parent) {
+          return parent({
+            ns: 0, func: 'add', args: { a: 1, b: 1 }
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `null` ns illegale option': {
+        topic: function (parent) {
+          return parent({
+            ns: null, func: 'add', args: { a: 1, b: 1 }
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `object` ns illegale option': {
+        topic: function (parent) {
+          return parent({
+            ns: {}, func: 'add', args: { a: 1, b: 1 }
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `empty string` ns illegale option': {
+        topic: function (parent) {
+          return parent({
+            ns: '', func: 'add', args: { a: 1, b: 1 }
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `not path string` ns illegale option': {
+        topic: function (parent) {
+          return parent({
+            ns: 'hello', func: 'add', args: { a: 1, b: 1 }
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `sub path string` ns option': {
+        topic: function (parent) {
+          return parent({
+            ns: '/hoge/foo', func: 'add', args: { a: 1, b: 1 }
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `number` func illegale option': {
+        topic: function (parent) {
+          return parent({
+            func: 32, args: { a: 1, b: 1 }
+          });
+        },
+        '`do` method should returned `null`': function (topic) {
+          assert.isNull(topic);
+        },
+      },
+      'with specify `null` func illegale option': {
+        topic: function (parent) {
+          return parent({
+            func: null, args: { a: 1, b: 1 }
+          });
+        },
+        '`do` method should returned `null`': function (topic) {
+          assert.isNull(topic);
+        },
+      },
+      'with specify `object` func illegale option': {
+        topic: function (parent) {
+          return parent({
+            func: {}, args: { a: 1, b: 1 }
+          });
+        },
+        '`do` method should returned `null`': function (topic) {
+          assert.isNull(topic);
+        },
+      },
+      'with specify `empty string` func illegale option': {
+        topic: function (parent) {
+          return parent({
+            func: '', args: { a: 1, b: 1 }
+          });
+        },
+        '`do` method should returned `null`': function (topic) {
+          assert.isNull(topic);
+        },
+      },
+      'with specify `number` args option': {
+        topic: function (parent) {
+          return parent({
+            func: 'add', args: 22
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `null` args option': {
+        topic: function (parent) {
+          return parent({
+            func: 'add', args: null 
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `empty object` args option': {
+        topic: function (parent) {
+          return parent({
+            func: 'add', args: {}
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `string` args option': {
+        topic: function (parent) {
+          return parent({
+            func: 'add', args: 'hello'
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `function` args option': {
+        topic: function (parent) {
+          return parent({
+            func: 'add', args: function () { console.log('hoge'); }
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `negative number` timeout illegale option': {
+        topic: function (parent) {
+          return parent({
+            func: 'add', args: { a: 1, b: 2 }, timeout: -10
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `float number` timeout option': {
+        topic: function (parent) {
+          return parent({
+            func: 'add', args: { a: 1, b: 2 }, timeout: 10.00
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `null` timeout illegale option': {
+        topic: function (parent) {
+          return parent({
+            func: 'add', args: { a: 1, b: 2 }, timeout: null
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `object` timeout illegale option': {
+        topic: function (parent) {
+          return parent({
+            func: 'add', args: { a: 1, b: 2 }, timeout: {}
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `string` timeout illegale option': {
+        topic: function (parent) {
+          return parent({
+            func: 'add', args: { a: 1, b: 2 }, timeout: 'hoge'
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+      'with specify `function` timeout illegale option': {
+        topic: function (parent) {
+          return parent({
+            func: 'add', args: { a: 1, b: 2 }, timeout: function () {}
+          });
+        },
+        '`do` method should returned a `Task` object': function (topic) {
+          assert.instanceOf(topic, Task);
+        },
+      },
+    },
+  },
+})).export(module);

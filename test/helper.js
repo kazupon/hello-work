@@ -7,8 +7,35 @@
 //
 // import(s)
 //
+var EventEmitter = require('events').EventEmitter;
 var Agent = require('../lib/agent').Agent;
 
+var promiser = function () {
+  var args = arguments;
+  return function () {
+    var promise = new EventEmitter();
+    process.nextTick(function () {
+      promise.emit.apply(promise, args);
+    });
+    return promise;
+  }
+};
+
+var emitter = function (callback) {
+  var promise = new EventEmitter();
+  process.nextTick(function () {
+    callback(promise);
+  });
+  return promise;
+};
+
+function emit (callback) {
+  var promise = new EventEmitter();
+  process.nextTick(function () {
+    callback(promise); 
+  });
+  return promise;
+};
 
 function whenServerRunning (port, target) {
   var top_context = {};
@@ -34,6 +61,8 @@ function whenServerRunning (port, target) {
 
 
 module.exports = {
-  whenServerRunning: whenServerRunning
+  whenServerRunning: whenServerRunning,
+  promiser: promiser,
+  emitter: emitter
 };
 
