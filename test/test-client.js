@@ -67,13 +67,20 @@ suite.addBatch({
     topic: new Client(),
     'call `do`,': {
       topic: function (client) {
-        return client.do({
-          func: 'add',
-          args: { a: 2, b: 2 }
-        });
+        var ret = false;
+        try {
+          client.do({
+            func: 'add',
+            args: { a: 2, b: 2 }
+          }, function (job) {
+          });
+        } catch (e) {
+          ret = true;
+        }
+        return ret;
       },
-      '`do` method should returned `null`': function (topic) {
-        assert.isNull(topic);
+      '`do` method should `occur`': function (topic) {
+        assert.ok(topic);
       },
     },
   },
@@ -87,136 +94,169 @@ suite.addBatch({
     }),
     'call `do`': {
       topic: function (client) {
-        return function (options) {
-          return client.do(options);
+        return function (options, callback) {
+          var ret = false;
+          try {
+            client.do(options, callback);
+          } catch (e) {
+            ret = true;
+          }
+          return ret;
         };
       },
       'with specify `all` options': {
         topic: function (parent) {
           return parent({
-            ns: '/hoge', func: 'add', args: { a: 1, b: 1 }, timeout: 1000
+            ns: '/hoge', func: 'add', args: { a: 1, b: 1 }, timeout: 1000,
+          }, function (job) {
+            console.log('hoge');
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `ns` abbrev options': {
         topic: function (parent) {
           return parent({
-            func: 'add', args: { a: 1, b: 1 }, timeout: 1000
+            func: 'add', args: { a: 1, b: 1 }, timeout: 1000,
+          }, function (job) {
+            console.log('hoge');
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `func` abbrev options': {
         topic: function (parent) {
           return parent({
-            ns: '/hoge', args: { a: 1, b: 1 }, timeout: 1000
+            ns: '/hoge', args: { a: 1, b: 1 }, timeout: 1000,
+          }, function (job) {
+            console.log('hoge');
           });
         },
-        '`do` method should returned `null`': function (topic) {
-          assert.isNull(topic);
+        '`do` method should `occur` error': function (topic) {
+          assert.ok(topic);
         },
       },
       'with specify `args` abbrev options': {
         topic: function (parent) {
           return parent({
             ns: '/hoge', func: 'add', timeout: 1000
+          }, function (job) {
+            console.log('hoge');
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `timeoute` abbrev options': {
         topic: function (parent) {
           return parent({
-            ns: '/hoge', func: 'add', args: { a: 1, b: 1 }
+            ns: '/hoge', func: 'add', args: { a: 1, b: 1 },
+          }, function (job) {
+            console.log('hoge');
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
+        },
+      },
+      'with specify `callback` only': {
+        topic: function (parent) {
+          return parent(undefined, function (job) {
+            console.log('hoge');
+          });
+        },
+        '`do` method should `occur` error': function (topic) {
+          assert.ok(topic);
         },
       },
       'with specify `none`': {
         topic: function (parent) {
           return parent();
         },
-        '`do` method should returned `null`': function (topic) {
-          assert.isNull(topic);
+        '`do` method should `occur` error': function (topic) {
+          assert.ok(topic);
         },
       },
       'with specify `number` ns illegale option': {
         topic: function (parent) {
           return parent({
             ns: 0, func: 'add', args: { a: 1, b: 1 }
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `occur` error': function (topic) {
+          assert.ok(topic);
         },
       },
       'with specify `null` ns illegale option': {
         topic: function (parent) {
           return parent({
             ns: null, func: 'add', args: { a: 1, b: 1 }
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `occur` error': function (topic) {
+          assert.ok(topic);
         },
       },
       'with specify `object` ns illegale option': {
         topic: function (parent) {
           return parent({
             ns: {}, func: 'add', args: { a: 1, b: 1 }
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `occur` error': function (topic) {
+          assert.ok(topic);
         },
       },
       'with specify `empty string` ns illegale option': {
         topic: function (parent) {
           return parent({
             ns: '', func: 'add', args: { a: 1, b: 1 }
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `occur` error': function (topic) {
+          assert.ok(topic);
         },
       },
       'with specify `not path string` ns illegale option': {
         topic: function (parent) {
           return parent({
             ns: 'hello', func: 'add', args: { a: 1, b: 1 }
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `occur` error': function (topic) {
+          assert.ok(topic);
         },
       },
       'with specify `sub path string` ns option': {
         topic: function (parent) {
           return parent({
             ns: '/hoge/foo', func: 'add', args: { a: 1, b: 1 }
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `number` func illegale option': {
         topic: function (parent) {
           return parent({
             func: 32, args: { a: 1, b: 1 }
+          }, function (job) {
           });
         },
-        '`do` method should returned `null`': function (topic) {
-          assert.isNull(topic);
+        '`do` method should `occur` error': function (topic) {
+          assert.ok(topic);
         },
       },
       'with specify `null` func illegale option': {
@@ -225,138 +265,151 @@ suite.addBatch({
             func: null, args: { a: 1, b: 1 }
           });
         },
-        '`do` method should returned `null`': function (topic) {
-          assert.isNull(topic);
+        '`do` method should `occur` error': function (topic) {
+          assert.ok(topic);
         },
       },
       'with specify `object` func illegale option': {
         topic: function (parent) {
           return parent({
             func: {}, args: { a: 1, b: 1 }
+          }, function (job) {
           });
         },
-        '`do` method should returned `null`': function (topic) {
-          assert.isNull(topic);
+        '`do` method should `occur` error': function (topic) {
+          assert.ok(topic);
         },
       },
       'with specify `empty string` func illegale option': {
         topic: function (parent) {
           return parent({
             func: '', args: { a: 1, b: 1 }
+          }, function (job) {
           });
         },
-        '`do` method should returned `null`': function (topic) {
-          assert.isNull(topic);
+        '`do` method should `occur` error': function (topic) {
+          assert.ok(topic);
         },
       },
       'with specify `number` args option': {
         topic: function (parent) {
           return parent({
             func: 'add', args: 22
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `null` args option': {
         topic: function (parent) {
           return parent({
             func: 'add', args: null 
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `empty object` args option': {
         topic: function (parent) {
           return parent({
             func: 'add', args: {}
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `string` args option': {
         topic: function (parent) {
           return parent({
             func: 'add', args: 'hello'
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `function` args option': {
         topic: function (parent) {
           return parent({
             func: 'add', args: function () { console.log('hoge'); }
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `negative number` timeout illegale option': {
         topic: function (parent) {
           return parent({
             func: 'add', args: { a: 1, b: 2 }, timeout: -10
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `float number` timeout option': {
         topic: function (parent) {
           return parent({
             func: 'add', args: { a: 1, b: 2 }, timeout: 10.00
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `null` timeout illegale option': {
         topic: function (parent) {
           return parent({
             func: 'add', args: { a: 1, b: 2 }, timeout: null
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `object` timeout illegale option': {
         topic: function (parent) {
           return parent({
             func: 'add', args: { a: 1, b: 2 }, timeout: {}
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `string` timeout illegale option': {
         topic: function (parent) {
           return parent({
             func: 'add', args: { a: 1, b: 2 }, timeout: 'hoge'
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
       'with specify `function` timeout illegale option': {
         topic: function (parent) {
           return parent({
             func: 'add', args: { a: 1, b: 2 }, timeout: function () {}
+          }, function (job) {
           });
         },
-        '`do` method should returned a `Job` object': function (topic) {
-          assert.instanceOf(topic, Job);
+        '`do` method should `not occur` error': function (topic) {
+          assert.ok(!topic);
         },
       },
     },
