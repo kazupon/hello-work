@@ -109,7 +109,6 @@ suite.addBatch({
           return parent({
             ns: '/hoge', func: 'add', args: { a: 1, b: 1 }, timeout: 1000,
           }, function (job) {
-            console.log('hoge');
           });
         },
         '`do` method should `not occur` error': function (topic) {
@@ -121,7 +120,6 @@ suite.addBatch({
           return parent({
             func: 'add', args: { a: 1, b: 1 }, timeout: 1000,
           }, function (job) {
-            console.log('hoge');
           });
         },
         '`do` method should `not occur` error': function (topic) {
@@ -133,7 +131,6 @@ suite.addBatch({
           return parent({
             ns: '/hoge', args: { a: 1, b: 1 }, timeout: 1000,
           }, function (job) {
-            console.log('hoge');
           });
         },
         '`do` method should `occur` error': function (topic) {
@@ -145,7 +142,6 @@ suite.addBatch({
           return parent({
             ns: '/hoge', func: 'add', timeout: 1000
           }, function (job) {
-            console.log('hoge');
           });
         },
         '`do` method should `not occur` error': function (topic) {
@@ -157,7 +153,6 @@ suite.addBatch({
           return parent({
             ns: '/hoge', func: 'add', args: { a: 1, b: 1 },
           }, function (job) {
-            console.log('hoge');
           });
         },
         '`do` method should `not occur` error': function (topic) {
@@ -167,7 +162,6 @@ suite.addBatch({
       'with specify `callback` only': {
         topic: function (parent) {
           return parent(undefined, function (job) {
-            console.log('hoge');
           });
         },
         '`do` method should `occur` error': function (topic) {
@@ -414,4 +408,50 @@ suite.addBatch({
       },
     },
   }
+})).addBatch(whenServerRunning(20000, {
+  'call `do`,': {
+    topic: function () {
+      return function (options) {
+        return emitter(function (promise) {
+          var client = new Client();
+          client.connect(function (err) {
+            if (!err) {
+              client.do(options, function (job) {
+                console.log('test `do` callback : %j', job);
+                promise.emit('success', job);
+              });
+            }
+          });
+        });
+      };
+    },
+    'with specify `normal`': {
+      topic: function (parent) {
+        return parent({
+          func: 'add_normal', args: { a: 1, b: 1 }
+        });
+      },
+      'should returned `Job` object by callback': function (topic) {
+        assert.instanceOf(topic, Job);
+      },
+      /*
+      ', callback `complete`': {
+        topic: function (job) {
+          return emitter(function (promise) {
+            job.on('complete', function (res) {
+              promise.emit('success', res);
+            });
+          });
+        },
+        'should returned `res` object': function (topic) {
+          assert.ok(topic);
+        },
+        'should be `2` result': function (topic) {
+          assert.equal(topic.result, 2);
+        },
+      }
+      */
+    },
+  }
 })).export(module);
+
