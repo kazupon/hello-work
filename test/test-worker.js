@@ -219,4 +219,31 @@ suite.addBatch({
       },
     },
   },
+})).addBatch(whenServerRunning(20000, {
+  'call `regist`,': {
+    topic: function () {
+      return function (options) {
+        return emitter(function (promise) {
+          var worker = new Worker();
+          worker.connect(function (err) {
+            if (!err) {
+              worker.regist(options, function (job) {
+                promise.emit('success', job);
+              });
+            }
+          });
+        });
+      };
+    },
+    'with specify `normal`': {
+      topic: function (parent) {
+        return parent({
+          func: 'add_normal'
+        });
+      },
+      'should returned `Job` object by callback': function (topic) {
+        assert.instanceOf(topic, Job);
+      },
+    },
+  }
 })).export(module);
