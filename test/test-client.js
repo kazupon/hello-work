@@ -23,25 +23,70 @@ var emitter = require('./helper').emitter;
 // test(s)
 // 
 
-function callDo() {
-  return function (options) {
-    var ret = {};
-    var promise = new EventEmitter();
-    var client = new Client();
-    var onEmit = function (err) {
-      ret.client = client;
-      process.nextTick(function () {
-        err ? promise.emit('error', err, ret) : promise.emit('success', ret);
+function whenCallDoMethod (target) {
+  var top_context = {};
+  var top_context_properties = {};
+  var agent;
+  var client;
+  top_context_properties.topic = function () {
+    return function (opts) {
+      return emitter(function (promise) {
+        try {
+          agent = new Agent();
+          agent.start(20000, function () {
+            console.log('agent start ...');
+            client = new Client();
+            console.log('client connect ...');
+            client.connect(function (err) {
+              try {
+                if (err) {
+                  promise.emit('error', err);
+                  return;
+                }
+                if (opts) {
+                  var cb = opts.cb || true;
+                  if (cb) {
+                    client.do(opts, function (job) {
+                      promise.emit('success', job);
+                    });
+                  } else {
+                    client.do(opts);
+                  }
+                } else {
+                  client.do();
+                }
+              } catch (e) {
+                promise.emit('error', e);
+              }
+            });
+          });
+        } catch (e) {
+          promise.emit('error', e);
+        }
       });
     };
-    client.on('connect', onEmit);
-    var args = [];
-    if (options) {
-      args.push(options);
-    }
-    client.connect.apply(client, args);
-    return promise;
   };
+  Object.keys(target).forEach(function (context) {
+    top_context_properties[context] = target[context];
+  });
+  top_context_properties.teardown = function (topic) {
+    try {
+      process.nextTick(function () {
+        client.disconnect(function (err) {
+          console.log('... disconnect client');
+        });
+      });
+      process.nextTick(function () {
+        agent.stop(function (err) {
+          console.log('... stop agent');
+        });
+      });
+    } catch (e) {
+      console.error(e.message);
+    }
+  };
+  top_context['When start agent and call `do` method'] = top_context_properties;
+  return top_context;
 }
 
 
@@ -79,335 +124,507 @@ suite.addBatch({
         }
         return ret;
       },
-      '`do` method should `occur`': function (topic) {
+      'should `occur` error': function (topic) {
         assert.ok(topic);
       },
     },
   },
-}).addBatch(whenServerRunning(20000, {
-  'check parameter,': {
-    topic: emitter(function (promise) {
-      var client = new Client();
-      client.connect(function (err) {
-        err ? promise.emit('error', err) : promise.emit('success', client);
+}).addBatch(whenCallDoMethod({
+  'with specify `all` options': {
+    topic: function (parent) {
+      return parent({
+        ns: '/', func: 'hoge', args: { a: 1, b: 1 }, timeout: 1000
       });
-    }),
-    'call `do`': {
-      topic: function (client) {
-        return function (options, callback) {
-          var ret = false;
-          try {
-            client.do(options, callback);
-          } catch (e) {
-            ret = true;
-          }
-          return ret;
-        };
-      },
-      'with specify `all` options': {
-        topic: function (parent) {
-          return parent({
-            ns: '/hoge', func: 'add', args: { a: 1, b: 1 }, timeout: 1000,
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `ns` abbrev options': {
-        topic: function (parent) {
-          return parent({
-            func: 'add', args: { a: 1, b: 1 }, timeout: 1000,
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `func` abbrev options': {
-        topic: function (parent) {
-          return parent({
-            ns: '/hoge', args: { a: 1, b: 1 }, timeout: 1000,
-          }, function (job) {
-          });
-        },
-        '`do` method should `occur` error': function (topic) {
-          assert.ok(topic);
-        },
-      },
-      'with specify `args` abbrev options': {
-        topic: function (parent) {
-          return parent({
-            ns: '/hoge', func: 'add', timeout: 1000
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `timeoute` abbrev options': {
-        topic: function (parent) {
-          return parent({
-            ns: '/hoge', func: 'add', args: { a: 1, b: 1 },
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `callback` only': {
-        topic: function (parent) {
-          return parent(undefined, function (job) {
-          });
-        },
-        '`do` method should `occur` error': function (topic) {
-          assert.ok(topic);
-        },
-      },
-      'with specify `none`': {
-        topic: function (parent) {
-          return parent();
-        },
-        '`do` method should `occur` error': function (topic) {
-          assert.ok(topic);
-        },
-      },
-      'with specify `number` ns illegale option': {
-        topic: function (parent) {
-          return parent({
-            ns: 0, func: 'add', args: { a: 1, b: 1 }
-          }, function (job) {
-          });
-        },
-        '`do` method should `occur` error': function (topic) {
-          assert.ok(topic);
-        },
-      },
-      'with specify `null` ns illegale option': {
-        topic: function (parent) {
-          return parent({
-            ns: null, func: 'add', args: { a: 1, b: 1 }
-          }, function (job) {
-          });
-        },
-        '`do` method should `occur` error': function (topic) {
-          assert.ok(topic);
-        },
-      },
-      'with specify `object` ns illegale option': {
-        topic: function (parent) {
-          return parent({
-            ns: {}, func: 'add', args: { a: 1, b: 1 }
-          }, function (job) {
-          });
-        },
-        '`do` method should `occur` error': function (topic) {
-          assert.ok(topic);
-        },
-      },
-      'with specify `empty string` ns illegale option': {
-        topic: function (parent) {
-          return parent({
-            ns: '', func: 'add', args: { a: 1, b: 1 }
-          }, function (job) {
-          });
-        },
-        '`do` method should `occur` error': function (topic) {
-          assert.ok(topic);
-        },
-      },
-      'with specify `not path string` ns illegale option': {
-        topic: function (parent) {
-          return parent({
-            ns: 'hello', func: 'add', args: { a: 1, b: 1 }
-          }, function (job) {
-          });
-        },
-        '`do` method should `occur` error': function (topic) {
-          assert.ok(topic);
-        },
-      },
-      'with specify `sub path string` ns option': {
-        topic: function (parent) {
-          return parent({
-            ns: '/hoge/foo', func: 'add', args: { a: 1, b: 1 }
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `number` func illegale option': {
-        topic: function (parent) {
-          return parent({
-            func: 32, args: { a: 1, b: 1 }
-          }, function (job) {
-          });
-        },
-        '`do` method should `occur` error': function (topic) {
-          assert.ok(topic);
-        },
-      },
-      'with specify `null` func illegale option': {
-        topic: function (parent) {
-          return parent({
-            func: null, args: { a: 1, b: 1 }
-          });
-        },
-        '`do` method should `occur` error': function (topic) {
-          assert.ok(topic);
-        },
-      },
-      'with specify `object` func illegale option': {
-        topic: function (parent) {
-          return parent({
-            func: {}, args: { a: 1, b: 1 }
-          }, function (job) {
-          });
-        },
-        '`do` method should `occur` error': function (topic) {
-          assert.ok(topic);
-        },
-      },
-      'with specify `empty string` func illegale option': {
-        topic: function (parent) {
-          return parent({
-            func: '', args: { a: 1, b: 1 }
-          }, function (job) {
-          });
-        },
-        '`do` method should `occur` error': function (topic) {
-          assert.ok(topic);
-        },
-      },
-      'with specify `number` args option': {
-        topic: function (parent) {
-          return parent({
-            func: 'add', args: 22
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `null` args option': {
-        topic: function (parent) {
-          return parent({
-            func: 'add', args: null 
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `empty object` args option': {
-        topic: function (parent) {
-          return parent({
-            func: 'add', args: {}
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `string` args option': {
-        topic: function (parent) {
-          return parent({
-            func: 'add', args: 'hello'
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `function` args option': {
-        topic: function (parent) {
-          return parent({
-            func: 'add', args: function () { console.log('hoge'); }
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `negative number` timeout illegale option': {
-        topic: function (parent) {
-          return parent({
-            func: 'add', args: { a: 1, b: 2 }, timeout: -10
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `float number` timeout option': {
-        topic: function (parent) {
-          return parent({
-            func: 'add', args: { a: 1, b: 2 }, timeout: 10.00
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `null` timeout illegale option': {
-        topic: function (parent) {
-          return parent({
-            func: 'add', args: { a: 1, b: 2 }, timeout: null
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `object` timeout illegale option': {
-        topic: function (parent) {
-          return parent({
-            func: 'add', args: { a: 1, b: 2 }, timeout: {}
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `string` timeout illegale option': {
-        topic: function (parent) {
-          return parent({
-            func: 'add', args: { a: 1, b: 2 }, timeout: 'hoge'
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
-      'with specify `function` timeout illegale option': {
-        topic: function (parent) {
-          return parent({
-            func: 'add', args: { a: 1, b: 2 }, timeout: function () {}
-          }, function (job) {
-          });
-        },
-        '`do` method should `not occur` error': function (topic) {
-          assert.ok(!topic);
-        },
-      },
     },
-  }
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `hoge` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'hoge');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `ns` abbrev options': {
+    topic: function (parent) {
+      return parent({
+        func: 'add', args: { a: 1, b: 1 }, timeout: 1000,
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `func` abbrev options': {
+    topic: function (parent) {
+      return parent({
+        ns: '/hoge/', args: { a: 1, b: 1 }, timeout: 1000,
+      });
+    },
+    'should `occur` error': function (err, topic) {
+      assert.instanceOf(err, Error);
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `args` abbrev options': {
+    topic: function (parent) {
+      return parent({
+        ns: '/', func: 'add', timeout: 1000
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `timeout` abbrev options': {
+    topic: function (parent) {
+      return parent({
+        ns: '/hoge/', func: 'add', args: { a: 1, b: 1 },
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/hoge/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/hoge/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `callback` only': {
+    topic: function (parent) {
+      return parent({ cb: false });
+    },
+    'should `occur` error': function (err, topic) {
+      assert.instanceOf(err, Error);
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `none`': {
+    topic: function (parent) {
+      return parent();
+    },
+    'should `occur` error': function (err, topic) {
+      assert.instanceOf(err, Error);
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `number` ns illegale option': {
+    topic: function (parent) {
+      return parent({
+        ns: 0, func: 'add', args: { a: 1, b: 1 }
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `null` ns illegale option': {
+    topic: function (parent) {
+      return parent({
+        ns: null, func: 'add', args: { a: 1, b: 1 }
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `object` ns illegale option': {
+    topic: function (parent) {
+      return parent({
+        ns: {}, func: 'add', args: { a: 1, b: 1 }
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `empty string` ns illegale option': {
+    topic: function (parent) {
+      return parent({
+        ns: '', func: 'add', args: { a: 1, b: 1 }
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `not path string` ns illegale option': {
+    topic: function (parent) {
+      return parent({
+        ns: 'hello', func: 'add', args: { a: 1, b: 1 }
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `sub path string` ns option': {
+    topic: function (parent) {
+      return parent({
+        ns: '/hoge/foo/', func: 'add', args: { a: 1, b: 1 }
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/hoge/foo/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/hoge/foo/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `number` func illegale option': {
+    topic: function (parent) {
+      return parent({
+        func: 32, args: { a: 1, b: 1 }
+      });
+    },
+    'should `occur` error': function (err, topic) {
+      assert.instanceOf(err, Error);
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `null` func illegale option': {
+    topic: function (parent) {
+      return parent({
+        func: null, args: { a: 1, b: 1 }
+      });
+    },
+    'should `occur` error': function (err, topic) {
+      assert.instanceOf(err, Error);
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `object` func illegale option': {
+    topic: function (parent) {
+      return parent({
+        func: {}, args: { a: 1, b: 1 }
+      });
+    },
+    'should `occur` error': function (err, topic) {
+      assert.instanceOf(err, Error);
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `empty string` func illegale option': {
+    topic: function (parent) {
+      return parent({
+        func: '', args: { a: 1, b: 1 }
+      });
+    },
+    'should `occur` error': function (err, topic) {
+      assert.instanceOf(err, Error);
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `number` args option': {
+    topic: function (parent) {
+      return parent({
+        ns: 'hoge', func: 'add', args: 22
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `null` args option': {
+    topic: function (parent) {
+      return parent({
+        func: 'add', args: null 
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `empty object` args option': {
+    topic: function (parent) {
+      return parent({
+        func: 'add', args: {}
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `string` args option': {
+    topic: function (parent) {
+      return parent({
+        func: 'add', args: 'hello'
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `function` args option': {
+    topic: function (parent) {
+      return parent({
+        func: 'add', args: function () { console.log('hoge'); }
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `negative number` timeout illegale option': {
+    topic: function (parent) {
+      return parent({
+        func: 'add', args: { a: 1, b: 2 }, timeout: -10
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `float number` timeout option': {
+    topic: function (parent) {
+      return parent({
+        func: 'add', args: { a: 1, b: 2 }, timeout: 10.00
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `null` timeout illegale option': {
+    topic: function (parent) {
+      return parent({
+        func: 'add', args: { a: 1, b: 2 }, timeout: null
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `object` timeout illegale option': {
+    topic: function (parent) {
+      return parent({
+        func: 'add', args: { a: 1, b: 2 }, timeout: {}
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `string` timeout illegale option': {
+    topic: function (parent) {
+      return parent({
+        func: 'add', args: { a: 1, b: 2 }, timeout: 'hoge'
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+  'with specify `function` timeout illegale option': {
+    topic: function (parent) {
+      return parent({
+        func: 'add', args: { a: 1, b: 2 }, timeout: function () {}
+      });
+    },
+    'should `not occur` error': function (err, topic) {
+      assert.isNull(err);
+    },
+    'should returned `Job` object': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should be `/` ns property on a job object': function (topic) {
+      assert.equal(topic.ns, '/');
+    },
+    'should be `add` func property on a job object': function (topic) {
+      assert.equal(topic.func, 'add');
+    },
+  },
+})).addBatch(whenCallDoMethod({
+})).addBatch(whenCallDoMethod({
+  /*
 })).addBatch(whenServerRunning(20000, {
   'call `do`,': {
     topic: function () {
@@ -434,24 +651,23 @@ suite.addBatch({
       'should returned `Job` object by callback': function (topic) {
         assert.instanceOf(topic, Job);
       },
-      /*
-      ', callback `complete`': {
-        topic: function (job) {
-          return emitter(function (promise) {
-            job.on('complete', function (res) {
-              promise.emit('success', res);
-            });
-          });
-        },
-        'should returned `res` object': function (topic) {
-          assert.ok(topic);
-        },
-        'should be `2` result': function (topic) {
-          assert.equal(topic.result, 2);
-        },
-      }
-      */
+      //', callback `complete`': {
+      //  topic: function (job) {
+      //    return emitter(function (promise) {
+      //      job.on('complete', function (res) {
+      //        promise.emit('success', res);
+      //      });
+      //    });
+      //  },
+      //  'should returned `res` object': function (topic) {
+      //    assert.ok(topic);
+      //  },
+      //  'should be `2` result': function (topic) {
+      //    assert.equal(topic.result, 2);
+      //  },
+      //}
     },
   }
+  */
 })).export(module);
 
