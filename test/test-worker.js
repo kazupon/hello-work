@@ -428,4 +428,47 @@ suite.addBatch({
       assert.isEmpty(topic.args);
     },
   })
+).addBatch(
+  whenSubmitJobAndCallRegist({
+    ns: '/hoge/', func: 'foo', args: { a: 1, b: 1 } }, {
+    ns: '/hoge/', func: 'foo' }, {
+    'should returned `Job` object by callback': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should exists `id` property in a job object': function (topic) {
+      assert.ok(topic.id);
+    },
+    'An arguments `a` should be `1`': function (topic) {
+      assert.equal(topic.args.a, 1);
+    },
+    'An arguments `b` should be `1`': function (topic) {
+      assert.equal(topic.args.b, 1);
+    },
+  })
+).addBatch(
+  whenSubmitJobAndCallRegist({
+    ns: '/hoge/foo/', func: 'foo', args: { a: 1, b: null, c: {}, d: 'hello', e: function () {}  } }, {
+    ns: '/hoge/foo/', func: 'foo' }, {
+    'should returned `Job` object by callback': function (topic) {
+      assert.instanceOf(topic, Job);
+    },
+    'should exists `id` property in a job object': function (topic) {
+      assert.ok(topic.id);
+    },
+    'An arguments `a` should be `1`': function (topic) {
+      assert.equal(topic.args.a, 1);
+    },
+    'An arguments `b` should be `null`': function (topic) {
+      assert.equal(topic.args.b, null);
+    },
+    'An arguments `c` should be `{}`': function (topic) {
+      assert.deepEqual(topic.args.c, {});
+    },
+    'An arguments `d` should be `hello`': function (topic) {
+      assert.equal(topic.args.d, 'hello');
+    },
+    'should not exists arguments `e`': function (topic) {
+      assert.isUndefined(topic.args.e);
+    },
+  })
 ).export(module);
