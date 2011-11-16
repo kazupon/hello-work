@@ -24,62 +24,6 @@ var emitter = require('./helper').emitter;
 // test(s)
 // 
 
-function whenSubmitJob (opts, target) {
-  var top_context = {};
-  var top_context_properties = {};
-  var agent;
-  var client;
-  top_context_properties.topic = function () {
-    return emitter(function (promise) {
-      try {
-        agent = new Agent();
-        agent.start(20000, function () {
-          console.log('agent start ...');
-          client = new Client();
-          console.log('client connect ...');
-          client.connect(function (err) {
-            try {
-              if (err) {
-                promise.emit('error', err);
-                return;
-              }
-              client.do(opts, function (job) {
-                promise.emit('success', job);
-              });
-            } catch (e) {
-              promise.emit('error', e);
-            }
-          });
-        });
-      } catch (e) {
-        promise.emit('error', e);
-      }
-    });
-  };
-  Object.keys(target).forEach(function (context) {
-    top_context_properties[context] = target[context];
-  });
-  top_context_properties.teardown = function (topic) {
-    try {
-      process.nextTick(function () {
-        client.disconnect(function (err) {
-          console.log('... disconnect client');
-        });
-      });
-      process.nextTick(function () {
-        agent.stop(function (err) {
-          console.log('... stop agent');
-        });
-      });
-    } catch (e) {
-      console.error(e.message);
-    }
-  };
-  var desc = format('when submit `%j` job,', opts);
-  top_context[desc] = top_context_properties;
-  return top_context;
-}
-
 function whenSubmitJobAndCallRegist (submit_opts, regist_opts, target) {
   var top_context = {};
   var top_context_properties = {};
@@ -167,53 +111,6 @@ function whenSubmitJobAndCallRegist (submit_opts, regist_opts, target) {
   top_context[desc] = top_context_properties;
   return top_context;
 }
-function callRegist (opts, target) {
-  var top_context = {};
-  var top_context_properties = {};
-  var worker;
-  top_context_properties.topic = function (parent) {
-    console.dir(parent);
-    try {
-      return emitter(function (promise) {
-        worker = new Worker();
-        console.log('worker connect ...');
-        worker.connect(function (err) {
-          try {
-            if (err) {
-              promise.emit('error', err);
-              return;
-            }
-            worker.regist(opts, function (job) {
-              promise.emit('success', job);
-            });
-          } catch (e) {
-            promise.emit('error', e);
-          }
-        });
-      });
-    } catch (e) {
-      promise.emit('error', e);
-    }
-  };
-  Object.keys(target).forEach(function (context) {
-    top_context_properties[context] = target[context];
-  });
-  top_context_properties.teardown = function (topic) {
-    try {
-      process.nextTick(function () {
-        worker.disconnect(function (err) {
-          console.log('... disconnect worker');
-        });
-      });
-    } catch (e) {
-      console.error(e.message);
-    }
-  };
-  var desc = format('call `regist` with `%j` option(s)', opts);
-  top_context[desc] = top_context_properties;
-  return top_context;
-}
-
 
 var suite = vows.describe('worker.js tests');
 suite.addBatch({
