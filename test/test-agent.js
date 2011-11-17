@@ -45,23 +45,5 @@ suite.addBatch({
       assert.isUndefined(topic);
     },
   },
-  /*
-  '`error`': {
-    topic: function () {
-      var port = 20002;
-      var server = net.createServer();
-      var self = this;
-      server.listen(port, function () {
-        var agent = new Agent();
-        agent.on('error', self.callback);
-        agent.start(port);
-      });
-    },
-    'should be callback': function (topic) {
-      assert.isUndefined(topic);
-      assert.isObject(topic);
-    },
-  },
-  */
 }).export(module);
 
