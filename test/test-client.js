@@ -140,7 +140,7 @@ function whenOccuredEventOnJob (do_opts, regist_opts, regist_cb, event_name, tar
                         promise.emit('error', e);
                       }
                     });
-                  }, 200);
+                  }, 1);
                 } catch (e) {
                   promise.emit('error', e);
                 }
