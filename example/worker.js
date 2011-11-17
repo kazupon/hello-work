@@ -19,27 +19,26 @@ worker.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
   }
 
   // general sample.
-  var add = function (a, b) {
-    return a + b;
-  };
   worker.regist({
     // ns: '/', // if namespace do not specific, default namespace is '/'
     func: 'add',
   }, function (job) {
-    return add(job.args.a, job.args.b);
+    return job.args.a + job.args.b;
   });
 
 
   // timeout sample.
-  var doHeavySub = function (a, b) {
-    // somthing do ...
-    return a - b;
-  };
   worker.regist({
-    namespace: '/ns1/',
-    func: 'sub',
-  }, function (job) { // detecte timeout by framework
-    return doHeavySub(job.args.a, job.args.b);
+    ns: '/ns1/',
+    func: 'fib',
+  }, function (job) { // detect timeout by framework
+    var fib = function (n) {
+      if (n === 0 || n === 1) {
+        return n;
+      }
+      return fib(n - 1) + fib(n - 2);
+    };
+    return fib(job.args.n);
   });
 
 
@@ -48,7 +47,7 @@ worker.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
     if (!job.args.a || !job.args.b) {
       throw new Error('Invalid Parameter');
     }
-    return job.args.a + job.args.b; 
+    return job.args.a * job.args.b; 
   });
 
 

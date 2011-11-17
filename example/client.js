@@ -11,7 +11,7 @@ var client = new Client();
 
 
 // connect to server, with port and host parameter.
-clinet.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on('connect', function (err) { ... })
+client.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on('connect', function (err) { ... })
 
   // error handling
   if (err) {
