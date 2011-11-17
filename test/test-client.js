@@ -98,6 +98,7 @@ function whenOccuredEventOnJob (do_opts, regist_opts, regist_cb, event_name, tar
   var client;
   var worker;
   var event = event_name;
+  var timer = arguments[5] || 10;
   top_context_properties.topic = function () {
     return emitter(function (promise) {
       try {
@@ -136,11 +137,14 @@ function whenOccuredEventOnJob (do_opts, regist_opts, regist_cb, event_name, tar
                         job.on('fail', function (err) {
                           promise.emit('success', err);
                         });
+                        job.on('timeout', function (code) {
+                          promise.emit('success', code);
+                        });
                       } catch (e) {
                         promise.emit('error', e);
                       }
                     });
-                  }, 1);
+                  }, timer);
                 } catch (e) {
                   promise.emit('error', e);
                 }
@@ -836,6 +840,22 @@ suite.addBatch({
     'should returned `Error` value response': function (topic) {
       assert.instanceOf(topic.err, Error);
       assert.equal(topic.err.message, 'Foo Error');
+    },
+  })
+).addBatch(
+  whenOccuredEventOnJob({
+    func: 'raiseTimeout', args: { a: 30 }, timeout: 1 }, {
+    func: 'raiseTimeout' }, function (job) {
+      var fib = function (i) {
+        if (i === 0 || i === 1) {
+          return i;
+        }
+        return fib(i - 1) + fib(i - 2);
+      };
+      return fib(job.args.a);
+    }, 'timeout', {
+    'should returned `2` value response': function (topic) {
+      assert.equal(topic.code, 2);
     },
   })
 ).addBatch(whenCallDoMethod({
