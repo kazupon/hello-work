@@ -10,6 +10,7 @@
 
 var vows = require('vows');
 var assert = require('assert');
+var format = require('util').format;
 var EventEmitter = require('events').EventEmitter;
 var Agent = require('../lib/agent').Agent;
 var Client = require('../lib/client').Client;
@@ -90,12 +91,13 @@ function whenCallDoMethod (target) {
   return top_context;
 }
 
-function whenCompleteJob (do_opts, regist_opts, regist_cb, target) {
+function whenOccuredEventOnJob (do_opts, regist_opts, regist_cb, event_name, target) {
   var top_context = {};
   var top_context_properties = {};
   var agent;
   var client;
   var worker;
+  var event = event_name;
   top_context_properties.topic = function () {
     return emitter(function (promise) {
       try {
@@ -174,7 +176,8 @@ function whenCompleteJob (do_opts, regist_opts, regist_cb, target) {
       console.error(e.message);
     }
   };
-  top_context['When start agent and call `do` method'] = top_context_properties;
+  var desc = format('When start agent, and a job was returned by calling `do` method with `%j` option(s), and occured `%s` event', do_opts, event);
+  top_context[desc] = top_context_properties;
   return top_context;
 }
 
@@ -711,61 +714,116 @@ suite.addBatch({
     },
   },
 })).addBatch(
-  whenCompleteJob({
+  whenOccuredEventOnJob({
     func: 'add', args: { a: 1, b: 1 } }, {
     func: 'add' }, function (job) {
-      console.log('job !!');
       return job.args.a + job.args.b;
-    }, {
-    'should returned `2` response': function (topic) {
+    }, 'complete', {
+    'should returned `2` value response': function (topic) {
       assert.equal(topic.result, 2);
     },
   })
+).addBatch(
+  whenOccuredEventOnJob({
+    ns: '/hoge/', func: 'add', args: { a: 1, b: 1 } }, {
+    ns: '/hoge/', func: 'add' }, function (job) {
+      return job.args.a + job.args.b;
+    }, 'complete', {
+    'should returned `2` value response': function (topic) {
+      assert.equal(topic.result, 2);
+    },
+  })
+).addBatch(
+  whenOccuredEventOnJob({
+    func: 'getReturnNull', args: { a: 1, b: 1 } }, {
+    func: 'getReturnNull' }, function (job) {
+      return null;
+    }, 'complete', {
+    'should returned `null` value response': function (topic) {
+      assert.isNull(topic.result);
+    },
+  })
+).addBatch(
+  whenOccuredEventOnJob({
+    func: 'getReturnObject', args: { a: 1, b: 1 } }, {
+    func: 'getReturnObject' }, function (job) {
+      return { hoge: 'hoge' };
+    }, 'complete', {
+    'should returned `object` value response': function (topic) {
+      assert.isObject(topic.result);
+      assert.include(topic.result, 'hoge');
+    },
+  })
+).addBatch(
+  whenOccuredEventOnJob({
+    func: 'getReturnUndefined', args: { a: 1, b: 1 } }, {
+    func: 'getReturnUndefined' }, function (job) {
+      return undefined;
+    }, 'complete', {
+    'should returned `undefined` value response': function (topic) {
+      assert.isUndefined(topic.result);
+    },
+  })
+).addBatch(
+  whenOccuredEventOnJob({
+    func: 'getReturnString', args: { a: 1, b: 1 } }, {
+    func: 'getReturnString' }, function (job) {
+      return 'hello';
+    }, 'complete', {
+    'should returned `hello` value response': function (topic) {
+      assert.equal(topic.result, 'hello');
+    },
+  })
+).addBatch(
+  whenOccuredEventOnJob({
+    func: 'getReturnArray', args: { a: 1, b: 1 } }, {
+    func: 'getReturnArray' }, function (job) {
+      return [1, 2, 3];
+    }, 'complete', {
+    'should returned `[1, 2, 3]` value response': function (topic) {
+      assert.deepEqual(topic.result, [1, 2, 3]);
+    },
+  })
+).addBatch(
+  whenOccuredEventOnJob({
+    func: 'getReturnFunction', args: { a: 1, b: 1 } }, {
+    func: 'getReturnFunction' }, function (job) {
+      return function () { console.log('hoge'); };
+    }, 'complete', {
+    'should returned `undefined` value response': function (topic) {
+      assert.isUndefined(topic.result);
+    },
+  })
+).addBatch(
+  whenOccuredEventOnJob({
+    func: 'argsPatternString', args: { a: 'hello', b: 'world' } }, {
+    func: 'argsPatternString' }, function (job) {
+      return job.args.a + job.args.b;
+    }, 'complete', {
+    'should returned `helloworld` value response': function (topic) {
+      assert.equal(topic.result, 'helloworld');
+    },
+  })
+).addBatch(
+  whenOccuredEventOnJob({
+    func: 'argsPatternArray', args: { a: [1, 2, 3], b: [4, 5, 6] } }, {
+    func: 'argsPatternArray' }, function (job) {
+      return job.args.a.concat(job.args.b);
+    }, 'complete', {
+    'should returned `[1, 2, 3, 4, 5, 6]` value response': function (topic) {
+      assert.deepEqual(topic.result, [1, 2, 3, 4, 5, 6]);
+    },
+  })
+).addBatch(
+  whenOccuredEventOnJob({
+    func: 'argsPatternObject', args: { a: { foo: 1 }, b: { bar: 2 } } }, {
+    func: 'argsPatternObject' }, function (job) {
+      return job.args.a.foo + job.args.b.bar;
+    }, 'complete', {
+    'should returned `3` value response': function (topic) {
+      assert.equal(topic.result, 3);
+    },
+  })
 ).addBatch(whenCallDoMethod({
-  /*
-})).addBatch(whenServerRunning(20000, {
-  'call `do`,': {
-    topic: function () {
-      return function (options) {
-        return emitter(function (promise) {
-          var client = new Client();
-          client.connect(function (err) {
-            if (!err) {
-              client.do(options, function (job) {
-                console.log('test `do` callback : %j', job);
-                promise.emit('success', job);
-              });
-            }
-          });
-        });
-      };
-    },
-    'with specify `normal`': {
-      topic: function (parent) {
-        return parent({
-          func: 'add_normal', args: { a: 1, b: 1 }
-        });
-      },
-      'should returned `Job` object by callback': function (topic) {
-        assert.instanceOf(topic, Job);
-      },
-      //', callback `complete`': {
-      //  topic: function (job) {
-      //    return emitter(function (promise) {
-      //      job.on('complete', function (res) {
-      //        promise.emit('success', res);
-      //      });
-      //    });
-      //  },
-      //  'should returned `res` object': function (topic) {
-      //    assert.ok(topic);
-      //  },
-      //  'should be `2` result': function (topic) {
-      //    assert.equal(topic.result, 2);
-      //  },
-      //}
-    },
-  }
-  */
 })).export(module);
 
