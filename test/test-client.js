@@ -13,6 +13,7 @@ var assert = require('assert');
 var EventEmitter = require('events').EventEmitter;
 var Agent = require('../lib/agent').Agent;
 var Client = require('../lib/client').Client;
+var Worker = require('../lib/worker').Worker;
 var Job = require('../lib/common').Job;
 var whenServerRunning = require('./helper').whenServerRunning;
 var promiser = require('./helper').promiser;
@@ -89,6 +90,93 @@ function whenCallDoMethod (target) {
   return top_context;
 }
 
+function whenCompleteJob (do_opts, regist_opts, regist_cb, target) {
+  var top_context = {};
+  var top_context_properties = {};
+  var agent;
+  var client;
+  var worker;
+  top_context_properties.topic = function () {
+    return emitter(function (promise) {
+      try {
+        agent = new Agent();
+        agent.start(20000, function () {
+          console.log('agent start ...');
+          client = new Client();
+          worker = new Worker();
+          console.log('client connect ...');
+          client.connect(function (err) {
+            try {
+              if (err) {
+                promise.emit('error', err);
+                return;
+              }
+              console.log('worker connect ...');
+              worker.connect(function (err) {
+                try {
+                  if (err) {
+                    promise.emit('error', err);
+                    return;
+                  }
+                  console.log('worker regist ...');
+                  worker.regist(regist_opts, regist_cb);
+                  console.log('client submit ...');
+                  setTimeout(function () {
+                    client.do(do_opts, function (job) {
+                      try {
+                        if (err) {
+                          promise.emit('error', err);
+                          return;
+                        }
+                        job.on('complete', function (res) {
+                          promise.emit('success', res);
+                        });
+                      } catch (e) {
+                        promise.emit('error', e);
+                      }
+                    });
+                  }, 200);
+                } catch (e) {
+                  promise.emit('error', e);
+                }
+              });
+            } catch (e) {
+              promise.emit('error', e);
+            }
+          });
+        });
+      } catch (e) {
+        promise.emit('error', e);
+      }
+    });
+  };
+  Object.keys(target).forEach(function (context) {
+    top_context_properties[context] = target[context];
+  });
+  top_context_properties.teardown = function (topic) {
+    try {
+      process.nextTick(function () {
+        worker.disconnect(function (err) {
+          console.log('... disconnect worker');
+        });
+      });
+      process.nextTick(function () {
+        client.disconnect(function (err) {
+          console.log('... disconnect client');
+        });
+      });
+      process.nextTick(function () {
+        agent.stop(function (err) {
+          console.log('... stop agent');
+        });
+      });
+    } catch (e) {
+      console.error(e.message);
+    }
+  };
+  top_context['When start agent and call `do` method'] = top_context_properties;
+  return top_context;
+}
 
 var suite = vows.describe('client.js tests');
 suite.addBatch({
@@ -622,8 +710,18 @@ suite.addBatch({
       assert.equal(topic.func, 'add');
     },
   },
-})).addBatch(whenCallDoMethod({
-})).addBatch(whenCallDoMethod({
+})).addBatch(
+  whenCompleteJob({
+    func: 'add', args: { a: 1, b: 1 } }, {
+    func: 'add' }, function (job) {
+      console.log('job !!');
+      return job.args.a + job.args.b;
+    }, {
+    'should returned `2` response': function (topic) {
+      assert.equal(topic.result, 2);
+    },
+  })
+).addBatch(whenCallDoMethod({
   /*
 })).addBatch(whenServerRunning(20000, {
   'call `do`,': {
