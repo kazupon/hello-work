@@ -133,6 +133,9 @@ function whenOccuredEventOnJob (do_opts, regist_opts, regist_cb, event_name, tar
                         job.on('complete', function (res) {
                           promise.emit('success', res);
                         });
+                        job.on('fail', function (err) {
+                          promise.emit('success', err);
+                        });
                       } catch (e) {
                         promise.emit('error', e);
                       }
@@ -822,6 +825,17 @@ suite.addBatch({
     }, 'complete', {
     'should returned `3` value response': function (topic) {
       assert.equal(topic.result, 3);
+    },
+  })
+).addBatch(
+  whenOccuredEventOnJob({
+    func: 'raiseError', args: { a: 1, b: 1 } }, {
+    func: 'raiseError' }, function (job) {
+      throw new Error('Foo Error');
+    }, 'fail', {
+    'should returned `Error` value response': function (topic) {
+      assert.instanceOf(topic.err, Error);
+      assert.equal(topic.err.message, 'Foo Error');
     },
   })
 ).addBatch(whenCallDoMethod({
