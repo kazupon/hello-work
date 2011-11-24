@@ -13,6 +13,7 @@ var assert = require('assert');
 var format = require('util').format;
 var Agent = require('../lib/agent').Agent;
 var net = require('net');
+var emitter = require('./helper').emitter;
 
 
 //
@@ -24,8 +25,12 @@ suite.addBatch({
   'call `start`': {
     'with a specific port `20000`': {
       topic: function () {
-        var agent = new Agent();
-        agent.start(20000, this.callback);
+        return emitter(function (promise) {
+          var agent = new Agent();
+          agent.start(20000, function () {
+            promise.emit('success');
+          });
+        });
       },
       'should be callback': function (topic) {
         assert.isUndefined(topic);
@@ -34,11 +39,14 @@ suite.addBatch({
   },
   'call `stop`': {
     topic: function () {
-      var agent = new Agent();
-      var self = this;
-      agent.start(20001, function () {
-        agent.on('stop', self.callback);
-        agent.stop();
+      return emitter(function (promise) {
+        var agent = new Agent();
+        agent.start(20001, function () {
+          agent.on('stop', function () {
+            promise.emit('success');
+          });
+          agent.stop();
+        });
       });
     },
     'should be callback': function (topic) {
