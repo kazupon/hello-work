@@ -29,14 +29,6 @@ var emitter = function (callback) {
   return promise;
 };
 
-function emit (callback) {
-  var promise = new EventEmitter();
-  process.nextTick(function () {
-    callback(promise); 
-  });
-  return promise;
-};
-
 function whenServerRunning (port, target) {
   var top_context = {};
   var top_context_properties = {};
@@ -51,9 +43,12 @@ function whenServerRunning (port, target) {
     top_context_properties[context] = target[context];
   });
   top_context_properties.teardown = function (agent) {
-    agent.stop(function () {
-      console.log('... stop hellowork server');
-    });
+      var cb = this.callback;
+      agent.on('stop', function () {
+        console.log('... stop hellowork server');
+        cb();
+      });
+      agent.stop();
   };
   top_context['When `hellowork` server running,'] = top_context_properties;
   return top_context;
