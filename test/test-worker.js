@@ -87,24 +87,21 @@ function whenSubmitJobAndCallRegist (submit_opts, regist_opts, target) {
     top_context_properties[context] = target[context];
   });
   top_context_properties.teardown = function (topic) {
+    var cb = this.callback;
     try {
-      process.nextTick(function () {
-        worker.disconnect(function (err) {
-          console.log('... disconnect worker');
-        });
-      });
-      process.nextTick(function () {
+      worker.disconnect(function (err) {
+        console.log('... disconnect worker');
         client.disconnect(function (err) {
           console.log('... disconnect client');
-        });
-      });
-      process.nextTick(function () {
-        agent.stop(function (err) {
-          console.log('... stop agent');
+          agent.stop(function (err) {
+            console.log('... stop agent');
+            cb();
+          });
         });
       });
     } catch (e) {
       console.error(e.message);
+      cb();
     }
   };
   var desc = format('when submit `%j` job, call `regist` with `%j` option(s)', submit_opts, regist_opts);
@@ -134,21 +131,21 @@ suite.addBatch({
     topic: new Worker (),
     'call `regist`,': {
       topic: function (worker) {
-        var ret;
-        try {
-          worker.regist({ func: 'add' }, function (job) {
-            console.log(job);
-          });
-        } catch (e) {
-          ret = e;
-        }
-        return ret;
+        return emitter(function (promise) {
+          try {
+            worker.regist({ func: 'add' }, function (job) {
+              promise.emit('success', job);
+            });
+          } catch (e) {
+            promise.emit('error', e);
+          }
+        });
       },
-      'should occur `error`': function (topic) {
-        assert.instanceOf(topic, Error);
-      },
-    },
-  },
+      'should occur `error`': function (err, topic) {
+        assert.instanceOf(err, Error);
+      }
+    }
+  }
 }).addBatch(whenServerRunning(20000, {
   'check parameter,': {
     topic: emitter(function (promise) {

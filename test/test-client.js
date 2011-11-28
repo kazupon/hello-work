@@ -17,7 +17,6 @@ var Client = require('../lib/client').Client;
 var Worker = require('../lib/worker').Worker;
 var Job = require('../lib/common').Job;
 var whenServerRunning = require('./helper').whenServerRunning;
-var promiser = require('./helper').promiser;
 var emitter = require('./helper').emitter;
 
 
@@ -58,12 +57,12 @@ function whenCallDoMethod (target) {
                   client.do();
                 }
               } catch (e) {
-                promise.emit('error', e);
+                process.nextTick(promise.emit.bind(promise, 'error', e));
               }
             });
           });
         } catch (e) {
-          promise.emit('error', e);
+          process.nextTick(promise.emit.bind(promise, 'error', e));
         }
       });
     };
@@ -72,19 +71,18 @@ function whenCallDoMethod (target) {
     top_context_properties[context] = target[context];
   });
   top_context_properties.teardown = function (topic) {
+    var cb = this.callback;
     try {
-      process.nextTick(function () {
-        client.disconnect(function (err) {
-          console.log('... disconnect client');
-        });
-      });
-      process.nextTick(function () {
-        agent.stop(function (err) {
+      client.disconnect(function (err) {
+        console.log('... disconnect client');
+        agent.stop(function () {
           console.log('... stop agent');
+          cb();
         });
       });
     } catch (e) {
       console.error(e.message);
+      cb();
     }
   };
   top_context['When start agent and call `do` method'] = top_context_properties;
@@ -150,12 +148,12 @@ function whenOccuredEventOnJob (do_opts, regist_opts, regist_cb, event_name, tar
                 }
               });
             } catch (e) {
-              promise.emit('error', e);
+              process.nextTick(promise.emit.bind(promise, 'error', e));
             }
           });
         });
       } catch (e) {
-        promise.emit('error', e);
+        process.nextTick(promise.emit.bind(promise, 'error', e));
       }
     });
   };
@@ -163,20 +161,16 @@ function whenOccuredEventOnJob (do_opts, regist_opts, regist_cb, event_name, tar
     top_context_properties[context] = target[context];
   });
   top_context_properties.teardown = function (topic) {
+    var cb = this.callback;
     try {
-      process.nextTick(function () {
-        worker.disconnect(function (err) {
-          console.log('... disconnect worker');
-        });
-      });
-      process.nextTick(function () {
+      worker.disconnect(function (err) {
+        console.log('... disconnect worker');
         client.disconnect(function (err) {
           console.log('... disconnect client');
-        });
-      });
-      process.nextTick(function () {
-        agent.stop(function (err) {
-          console.log('... stop agent');
+          agent.stop(function (err) {
+            console.log('... stop agent');
+            cb();
+          });
         });
       });
     } catch (e) {
