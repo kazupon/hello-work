@@ -620,4 +620,228 @@ suite.addBatch({
       }
     }
   }
+}).addBatch(whenServerRunning(20000, {
+  'call `connect` 2 times in a row,': {
+    topic: function () {
+      return function (interval) {
+        return emitter(function (promise) {
+          try {
+            var base = new Base();
+            base.connect(function (err) {
+              console.log('fire connect');
+            });
+            setTimeout(function () {
+              base.connect(function (err) {
+                var connect_err = err;
+                base.disconnect(function (err) {
+                  connect_err ? promise.emit('error', connect_err, base)
+                              : promise.emit('success', base);
+                });
+              });
+            }, interval);
+          } catch (e) {
+            promise.emit('error', err);
+          }
+        });
+      }
+    },
+    'status `connecting`': {
+      topic: function (parent) {
+        return parent(0);
+      },
+      'should occred `error`': function (err, topic) {
+        assert.instanceOf(err, Error);
+      },
+    },
+    'status `connected`': {
+      topic: function (parent) {
+        return parent(10);
+      },
+      'should occred `error`': function (err, topic) {
+        assert.instanceOf(err, Error);
+      },
+    }
+  }
+})).addBatch(whenServerRunning(20000, {
+  'call `disconnect` 2 times in a row,': {
+    topic: function () {
+      return function (interval) {
+        return emitter(function (promise) {
+          try {
+            var base = new Base();
+            base.connect(function (err) {
+              console.log('fire connect');
+              setTimeout(function () {
+                base.disconnect(function (err) {
+                  console.log('fire 1 disconnect');
+                });
+                setTimeout(function () {
+                  base.disconnect(function (err) {
+                    console.log('fire 2 disconnect');
+                    err ? promise.emit('error', err, base)
+                        : promise.emit('success', base);
+                  });
+                }, interval);
+              }, 10);
+            });
+          } catch (e) {
+            promise.emit('error', err);
+          }
+        });
+      }
+    },
+    'status `closing`': {
+      topic: function (parent) {
+        return parent(0);
+      },
+      'should occred `error`': function (err, topic) {
+        assert.instanceOf(err, Error);
+      },
+    },
+    'status `closed`': {
+      topic: function (parent) {
+        return parent(10);
+      },
+      'should occred `error`': function (err, topic) {
+        assert.instanceOf(err, Error);
+      },
+    },
+    //teardown: function (topic) {
+    //  var cb = this.callback;
+    //  setTimeout(function () {
+    //    cb();
+    //    console.log('teardown done');
+    //  }, 100);
+    //}
+  }
+})).addBatch({
+  'when agent `start`,': {
+    topic: function () {
+      var agent = new Agent();
+      this.agent = agent;
+      agent.start(20000, this.callback);
+    },
+    'call `connect`,': {
+      topic: function () {
+        var base = new Base();
+        this.base = base;
+        base.connect(this.callback);
+      },
+      'stop `agent`,': {
+        topic: function () {
+          var agent = this.agent;
+          agent.stop();
+          console.log('call stop !!');
+          this.callback();
+        },
+        'call `disconnect`,': {
+          topic: function () {
+            var base = this.base;
+            return function (timing) {
+              return emitter(function (promise) {
+                setTimeout(function () {
+                  base.disconnect(function (err) {
+                    err ? promise.emit('error', err) : promise.emit('success');
+                  });
+                }, timing);
+              });
+            };
+          },
+          'at the same time': {
+            topic: function (parent) {
+              return parent(0);
+            },
+            'should occured `error`': function (err, topic) {
+              assert.instanceOf(err, Error);
+            }
+          },
+          'after passed 5 ms': {
+            topic: function (parent) {
+              return parent(5);
+            },
+            'should occured `error`': function (err, topic) {
+              assert.instanceOf(err, Error);
+            }
+          },
+          'after passed 10 ms': {
+            topic: function (parent) {
+              return parent(10);
+            },
+            'should occured `error`': function (err, topic) {
+              assert.instanceOf(err, Error);
+            }
+          },
+          'after passed 100 ms': {
+            topic: function (parent) {
+              return parent(100);
+            },
+            'should occured `error`': function (err, topic) {
+              assert.instanceOf(err, Error);
+            }
+          },
+        }
+      }
+    }
+  }
+  /*
+  'when agent `start` and base `connect`, call `stop`,': {
+    topic: function () {
+      return function (timing) {
+        return emitter(function (promise) {
+          try {
+            var agent = new Agent();
+            var port = 20010;
+            agent.start(port, function () {
+              var base = new Base();
+              setTimeout(function () {
+                base.connect({ port: port }, function (err) {
+                  if (err) {
+                    promise.emit('error', err);
+                    return;
+                  }
+                  setTimeout(function () {
+                    agent.stop(function () {
+                      console.log('stop agent !!');
+                    });
+                    setTimeout(function () {
+                      base.disconnect(function (err) {
+                        err ? promise.emit('error', err)
+                            : promise.emit('success');
+                      });
+                    }, timing);
+                  }, 10);
+                });
+              }, 100);
+            });
+          } catch (e) {
+            promise.emit('error', e);
+          }
+        });
+      };
+    },
+    'call `disconnect` at the same time': {
+      topic: function (parent) {
+        return parent(0);
+      },
+      'should occured `error`': function (err, topic) {
+        assert.instanceOf(err, Error);
+      }
+    },
+    'call `disconnect` after passed 10 ms': {
+      topic: function (parent) {
+        return parent(10);
+      },
+      'should occured `error`': function (err, topic) {
+        assert.instanceOf(err, Error);
+      }
+    },
+    */
+    //teardown: function (topic) {
+    //  var cb = this.callback;
+    //  setTimeout(function () {
+    //    cb();
+    //    console.log('teardown done');
+    //  }, 100);
+    //}
+  //}
 }).export(module);
