@@ -839,6 +839,7 @@ suite.addBatch({
       assert.equal(topic.err.message, 'Foo Error');
     },
   })
+  /*
 ).addBatch(
   whenOccuredEventOnJob({
     func: 'raiseTimeout', args: { a: 30 }, timeout: 1 }, {
@@ -855,6 +856,7 @@ suite.addBatch({
       assert.equal(topic.code, 2);
     },
   })
+  */
 ).addBatch({
   'when `start` agent,': {
     topic: function () {
@@ -910,7 +912,7 @@ suite.addBatch({
           topic: function (parent) {
             return parent({
               params: {
-                func: 'add',
+                func: 'mul',
                 args: {
                   a: 1,
                   b: 1
@@ -919,15 +921,15 @@ suite.addBatch({
               timing: 10
             });
           },
-          'func property of job should be `add`': function (job) {
-            assert.equal(job.func, 'add');
+          'func property of job should be `mul`': function (job) {
+            assert.equal(job.func, 'mul');
           },
         },
         'after passed 100ms': {
           topic: function (parent) {
             return parent({
               params: {
-                func: 'add',
+                func: 'sub',
                 args: {
                   a: 1,
                   b: 1
@@ -936,15 +938,15 @@ suite.addBatch({
               timing: 100
             });
           },
-          'func property of job should be `add`': function (job) {
-            assert.equal(job.func, 'add');
+          'func property of job should be `sub`': function (job) {
+            assert.equal(job.func, 'sub');
           }
         },
         'after passed 1000ms': {
           topic: function (parent) {
             return parent({
               params: {
-                func: 'add',
+                func: 'div',
                 args: {
                   a: 1,
                   b: 1
@@ -953,8 +955,8 @@ suite.addBatch({
               timing: 1000
             });
           },
-          'func property of job should be `add`': function (job) {
-            assert.equal(job.func, 'add');
+          'func property of job should be `div`': function (job) {
+            assert.equal(job.func, 'div');
           }
         }
       }

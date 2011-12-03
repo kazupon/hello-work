@@ -59,6 +59,7 @@ function whenSubmitJobAndCallRegist (submit_opts, regist_opts, target) {
                   setTimeout(function () {
                     console.log('client submit ...');
                     client.do(submit_opts, function (job) {
+                      console.log('create job !!');
                       try {
                         if (err) {
                           promise.emit('error', err);
