@@ -57,12 +57,12 @@ function whenCallDoMethod (target) {
                   client.do();
                 }
               } catch (e) {
-                process.nextTick(promise.emit.bind(promise, 'error', e));
+                promise.emit('error', e);
               }
             });
           });
         } catch (e) {
-          process.nextTick(promise.emit.bind(promise, 'error', e));
+          promise.emit('error', e);
         }
       });
     };
@@ -73,13 +73,16 @@ function whenCallDoMethod (target) {
   top_context_properties.teardown = function (topic) {
     var cb = this.callback;
     try {
-      client.disconnect(function (err) {
-        console.log('... disconnect client');
-        agent.stop(function () {
-          console.log('... stop agent');
-          cb();
+      var release = function (cb) {
+        client.disconnect(function (err) {
+          console.log('... disconnect client');
+          agent.stop(function () {
+            console.log('... stop agent');
+            cb();
+          });
         });
-      });
+      };
+      release(cb);
     } catch (e) {
       console.error(e.message);
       cb();
@@ -852,6 +855,118 @@ suite.addBatch({
       assert.equal(topic.code, 2);
     },
   })
-).addBatch(whenCallDoMethod({
-})).export(module);
+).addBatch({
+  'when `start` agent,': {
+    topic: function () {
+      var agent = new Agent();
+      this.agent = agent;
+      agent.start(20000, this.callback);
+    },
+    'call client `connect`,': {
+      topic: function () {
+        var client = new Client();
+        this.client = client;
+        client.connect(this.callback);
+      },
+      'call client': {
+        topic: function () {
+          var client = this.client;
+          return function (options) {
+            return emitter(function (promise) {
+              var ret_job;
+              client.do(options.params, function (job) {
+                console.log('create job1 : %j', job);
+                ret_job = job;
+              });
+              setTimeout(function () {
+                client.do({
+                  func: options.params.func + '1'
+                }, function (job) {
+                  console.log('create job2 : %j', job);
+                  promise.emit('success', ret_job);
+                });
+              }, options.timing);
+            });
+          };
+        },
+        'at the same time': {
+          topic: function (parent) {
+            return parent({
+              params: {
+                func: 'add',
+                args: {
+                  a: 1,
+                  b: 1
+                }
+              },
+              timing: 0
+            });
+          },
+          'func property of job should be `add`': function (job) {
+            assert.equal(job.func, 'add');
+          },
+        },
+        'after passed 10ms': {
+          topic: function (parent) {
+            return parent({
+              params: {
+                func: 'add',
+                args: {
+                  a: 1,
+                  b: 1
+                }
+              },
+              timing: 10
+            });
+          },
+          'func property of job should be `add`': function (job) {
+            assert.equal(job.func, 'add');
+          },
+        },
+        'after passed 100ms': {
+          topic: function (parent) {
+            return parent({
+              params: {
+                func: 'add',
+                args: {
+                  a: 1,
+                  b: 1
+                }
+              },
+              timing: 100
+            });
+          },
+          'func property of job should be `add`': function (job) {
+            assert.equal(job.func, 'add');
+          }
+        },
+        'after passed 1000ms': {
+          topic: function (parent) {
+            return parent({
+              params: {
+                func: 'add',
+                args: {
+                  a: 1,
+                  b: 1
+                }
+              },
+              timing: 1000
+            });
+          },
+          'func property of job should be `add`': function (job) {
+            assert.equal(job.func, 'add');
+          }
+        }
+      }
+    },
+    teardown: function (topic) {
+      var cb = this.callback;
+      var agent = this.agent;
+      agent.stop(function () {
+        console.log('agent stop');
+        cb();
+      });
+    }
+  }
+}).export(module);
 
