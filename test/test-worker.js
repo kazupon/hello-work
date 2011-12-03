@@ -149,12 +149,20 @@ suite.addBatch({
   }
 }).addBatch(whenServerRunning(20000, {
   'check parameter,': {
-    topic: emitter(function (promise) {
-      var worker = new Worker();
-      worker.connect(function (err) {
-        err ? promise.emit('error', err) : promise.emit('success', worker);
+    topic: function () {
+      return emitter(function (promise) {
+        var worker = new Worker();
+        worker.connect(function (err) {
+          err ? promise.emit('error', err) : promise.emit('success', worker);
+        });
       });
-    }),
+    },
+    teardown: function (worker) {
+      var cb = this.callback;
+      worker.disconnect(function (err) {
+        cb();
+      });
+    },
     'call `regist`': {
       topic: function (worker) {
         return function (options, callback) {
