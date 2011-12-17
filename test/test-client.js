@@ -722,7 +722,6 @@ suite.addBatch({
   whenOccuredEventOnJob({
     func: 'add', args: { a: 1, b: 1 } }, {
     func: 'add' }, function (job, done) {
-      //return job.args.a + job.args.b;
       done(job.args.a + job.args.b);
     }, 'complete', {
     'should returned `2` value response': function (topic) {
@@ -733,7 +732,6 @@ suite.addBatch({
   whenOccuredEventOnJob({
     ns: '/hoge/', func: 'add', args: { a: 1, b: 1 } }, {
     ns: '/hoge/', func: 'add' }, function (job, done) {
-      //return job.args.a + job.args.b;
       done(job.args.a + job.args.b);
     }, 'complete', {
     'should returned `2` value response': function (topic) {
@@ -744,7 +742,6 @@ suite.addBatch({
   whenOccuredEventOnJob({
     func: 'getReturnNull', args: { a: 1, b: 1 } }, {
     func: 'getReturnNull' }, function (job, done) {
-      //return null;
       done(null);
     }, 'complete', {
     'should returned `null` value response': function (topic) {
@@ -755,7 +752,6 @@ suite.addBatch({
   whenOccuredEventOnJob({
     func: 'getReturnObject', args: { a: 1, b: 1 } }, {
     func: 'getReturnObject' }, function (job, done) {
-      //return { hoge: 'hoge' };
       done({ hoge: 'hoge' });
     }, 'complete', {
     'should returned `object` value response': function (topic) {
@@ -767,7 +763,6 @@ suite.addBatch({
   whenOccuredEventOnJob({
     func: 'getReturnUndefined', args: { a: 1, b: 1 } }, {
     func: 'getReturnUndefined' }, function (job, done) {
-      //return undefined;
       done(undefined);
     }, 'complete', {
     'should returned `undefined` value response': function (topic) {
@@ -778,7 +773,6 @@ suite.addBatch({
   whenOccuredEventOnJob({
     func: 'getReturnString', args: { a: 1, b: 1 } }, {
     func: 'getReturnString' }, function (job, done) {
-      //return 'hello';
       done('hello');
     }, 'complete', {
     'should returned `hello` value response': function (topic) {
@@ -789,7 +783,6 @@ suite.addBatch({
   whenOccuredEventOnJob({
     func: 'getReturnArray', args: { a: 1, b: 1 } }, {
     func: 'getReturnArray' }, function (job, done) {
-      //return [1, 2, 3];
       done([1, 2, 3]);
     }, 'complete', {
     'should returned `[1, 2, 3]` value response': function (topic) {
@@ -800,7 +793,6 @@ suite.addBatch({
   whenOccuredEventOnJob({
     func: 'getReturnFunction', args: { a: 1, b: 1 } }, {
     func: 'getReturnFunction' }, function (job, done) {
-      //return function () { console.log('hoge'); };
       done(function () { console.log('hoge'); });
     }, 'complete', {
     'should returned `undefined` value response': function (topic) {
@@ -811,7 +803,6 @@ suite.addBatch({
   whenOccuredEventOnJob({
     func: 'argsPatternString', args: { a: 'hello', b: 'world' } }, {
     func: 'argsPatternString' }, function (job, done) {
-      //return job.args.a + job.args.b;
       done(job.args.a + job.args.b);
     }, 'complete', {
     'should returned `helloworld` value response': function (topic) {
@@ -822,7 +813,6 @@ suite.addBatch({
   whenOccuredEventOnJob({
     func: 'argsPatternArray', args: { a: [1, 2, 3], b: [4, 5, 6] } }, {
     func: 'argsPatternArray' }, function (job, done) {
-      //return job.args.a.concat(job.args.b);
       done(job.args.a.concat(job.args.b));
     }, 'complete', {
     'should returned `[1, 2, 3, 4, 5, 6]` value response': function (topic) {
@@ -833,7 +823,6 @@ suite.addBatch({
   whenOccuredEventOnJob({
     func: 'argsPatternObject', args: { a: { foo: 1 }, b: { bar: 2 } } }, {
     func: 'argsPatternObject' }, function (job, done) {
-      //return job.args.a.foo + job.args.b.bar;
       done(job.args.a.foo + job.args.b.bar);
     }, 'complete', {
     'should returned `3` value response': function (topic) {
