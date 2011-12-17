@@ -187,7 +187,7 @@ suite.addBatch({
       },
       'with specify `ns` abbrev options': {
         topic: function (parent) {
-          return parent({ func: 'add' }, function (job) {
+          return parent({ func: 'add1' }, function (job) {
             console.log('hoge');
           });
         },
@@ -207,7 +207,7 @@ suite.addBatch({
       },
       'with specify `callback` abbrev options': {
         topic: function (parent) {
-          return parent({ func: 'add' });
+          return parent({ func: 'add2' });
         },
         'should `occur` error': function (topic) {
           assert.ok(topic);
@@ -223,7 +223,7 @@ suite.addBatch({
       },
       'with specify `number` ns illegale option': {
         topic: function (parent) {
-          return parent({ ns: 2, func: 'add' }, function (job) {
+          return parent({ ns: 2, func: 'add3' }, function (job) {
             console.log('hoge');
           });
         },
@@ -233,7 +233,7 @@ suite.addBatch({
       },
       'with specify `null` ns illegale option': {
         topic: function (parent) {
-          return parent({ ns: null, func: 'add' }, function (job) {
+          return parent({ ns: null, func: 'add4' }, function (job) {
             console.log('hoge');
           });
         },
@@ -243,7 +243,7 @@ suite.addBatch({
       },
       'with specify `object` ns illegale option': {
         topic: function (parent) {
-          return parent({ ns: {}, func: 'add' }, function (job) {
+          return parent({ ns: {}, func: 'add5' }, function (job) {
             console.log('hoge');
           });
         },
@@ -253,7 +253,7 @@ suite.addBatch({
       },
       'with specify `empty string` ns illegale option': {
         topic: function (parent) {
-          return parent({ ns: '', func: 'add' }, function (job) {
+          return parent({ ns: '', func: 'add6' }, function (job) {
             console.log('hoge');
           });
         },
@@ -263,7 +263,7 @@ suite.addBatch({
       },
       'with specify `not path string` ns illegale option': {
         topic: function (parent) {
-          return parent({ ns: 'hoge', func: 'add' }, function (job) {
+          return parent({ ns: 'hoge', func: 'add7' }, function (job) {
             console.log('hoge');
           });
         },
@@ -273,7 +273,7 @@ suite.addBatch({
       },
       'with specify `sub path string` ns option': {
         topic: function (parent) {
-          return parent({ ns: '/hoge/hoge', func: 'add' }, function (job) {
+          return parent({ ns: '/hoge/hoge', func: 'add8' }, function (job) {
             console.log('hoge');
           });
         },
@@ -283,7 +283,7 @@ suite.addBatch({
       },
       'with specify `number` func illegale option': {
         topic: function (parent) {
-          return parent({ func: 'add' }, 1);
+          return parent({ func: 'add9' }, 1);
         },
         'should `occur` error': function (topic) {
           assert.ok(topic);
@@ -291,7 +291,7 @@ suite.addBatch({
       },
       'with specify `null` func illegale option': {
         topic: function (parent) {
-          return parent({ func: 'add' }, null);
+          return parent({ func: 'add10' }, null);
         },
         'should `occur` error': function (topic) {
           assert.ok(topic);
@@ -299,7 +299,7 @@ suite.addBatch({
       },
       'with specify `object` func illegale option': {
         topic: function (parent) {
-          return parent({ func: 'add' }, {});
+          return parent({ func: 'add11' }, {});
         },
         'should `occur` error': function (topic) {
           assert.ok(topic);
@@ -307,7 +307,7 @@ suite.addBatch({
       },
       'with specify `empty string` func illegale option': {
         topic: function (parent) {
-          return parent({ func: 'add' }, '');
+          return parent({ func: 'add12' }, '');
         },
         'should `occur` error': function (topic) {
           assert.ok(topic);
@@ -477,4 +477,82 @@ suite.addBatch({
       assert.isUndefined(topic.args.e);
     },
   })
-).export(module);
+).addBatch(whenServerRunning(20000, {
+  'call `regist`,': {
+    topic: function () {
+      var worker = new Worker();
+      return emitter(function (promise) {
+        worker.connect(function (err) {
+          worker.regist({ func: 'add' }, function (job) {
+            console.log('create job !!');
+          });
+          promise.emit('success', worker);
+        });
+      });
+    },
+    'call `regist` 2 times in a row': {
+      topic: function (worker) {
+        return emitter(function (promise) {
+          try {
+            worker.regist({ func: 'add' }, function (job) {
+              console.log('create job !!');
+            });
+          } catch (e) {
+            promise.emit('error', e);
+          }
+        });
+      },
+      'should occur `error`': function (err, topic) {
+        assert.instanceOf(err, Error);
+      }
+    },
+    teardown: function (worker) {
+      var cb = this.callback;
+      worker.disconnect(function (err) {
+        cb();
+      });
+    }
+  }
+})).addBatch(whenServerRunning(20000, {
+  'call `regist`,': {
+    topic: function () {
+      var worker = new Worker();
+      return emitter(function (promise) {
+        worker.connect(function (err) {
+          worker.regist({ func: 'add' }, function (job) {
+            console.log('create job !!');
+          });
+          promise.emit('success', worker);
+        });
+      });
+    },
+    'call `disconnect`,': {
+      topic: function (worker) {
+        return emitter(function (promise) {
+          worker.disconnect(function (err) {
+            promise.emit('success', worker);
+          });
+        });
+      },
+      'call `connect` and `regist`': {
+        topic: function (worker) {
+          return emitter(function (promise) {
+            worker.connect(function (err) {
+              try {
+                worker.regist({ func: 'add' }, function (job) {
+                  console.log('create job !!');
+                });
+                promise.emit('success');
+              } catch (e) {
+                process.nextTick(promise.emit.bind(promise, 'error', e));
+              }
+            });
+          });
+        },
+        'should `not occur` error': function (topic) {
+          assert.isUndefined(topic);
+        }
+      }
+    }
+  }
+})).export(module);
