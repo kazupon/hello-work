@@ -34,10 +34,12 @@ function whenServerRunning (port, target) {
   var top_context_properties = {};
   top_context_properties.topic = function () {
     var agent = new Agent();
-    agent.start(port, function () {
-      console.log('start hellowork server ...');
+    return emitter(function (promise) {
+      agent.start(port, function () {
+        console.log('start hellowork server ...');
+        promise.emit('success', agent);
+      });
     });
-    return agent;
   };
   Object.keys(target).forEach(function (context) {
     top_context_properties[context] = target[context];
