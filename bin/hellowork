@@ -55,6 +55,9 @@ function configureLogger (options, callback) {
   if (options.debug) {
     appenders.push({
       type: 'console',
+      layout: {
+        type: 'colouredLayout'
+      }
     });
   }
 
