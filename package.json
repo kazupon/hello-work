@@ -12,9 +12,11 @@
         "url": "https://github.com/kazupon/hello-work.git"
     },
     "dependencies": {
+        "log4js": ">=0.3.8"
     },
     "devDependencies": {
-        "vows": ">= 0.6.0"
+        "vows": ">= 0.6.0",
+        "node-inspector": ">=0.1.10"
     },
     "engines": {
         "node": ">= 0.6.3"
