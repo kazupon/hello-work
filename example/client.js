@@ -3,7 +3,7 @@
  */
 
 // import Client class.
-var Client = require('hello-work').Client;
+var Client = require('../lib/hello-work').Client;
 
 
 // create client instance.
@@ -25,7 +25,7 @@ client.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
     func: 'add', // function name.
     args: { // funciton arguments.
       a: 1,
-      b: 2,
+      b: 2
     },
   }, function (job) {
     // complete event.
@@ -41,7 +41,7 @@ client.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
     func: 'sub',
     args: {
       a: 2,
-      b: 2,
+      b: 2
     },
     timeout: 5000,
   }, function (job) {
@@ -61,7 +61,7 @@ client.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
     func: 'mul',
     args: {
       a: 2,
-      //b: 1,
+      b: 1
     }
   }, function (job) {
     // fail event.
@@ -75,6 +75,7 @@ client.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
   });
 
 
+  /*
   // binary parameter sample.
   var image_buf = new Buffer(256 * 256); // image data.
   client.do({
@@ -88,11 +89,11 @@ client.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
       console.log('process_image : ' + res);
     });
   });
+  */
 
 }); // end of client.connect
 
-
-process.on('exit', function (code, signal) {
+function abort () {
   // disconnect from server.
   client.disconnect(function (err) { // on('disconnect', function () { ... });
     // error handling
@@ -102,5 +103,25 @@ process.on('exit', function (code, signal) {
     }
     console.log('disconnect');
   });
+}
+
+process.on('SIGINT', function () {
+  abort();
+});
+
+process.on('SIGQUIT', function () {
+  abort();
+});
+
+process.on('SIGTERM', function () {
+  abort();
+});
+
+process.on('exit', function (code, signal) {
+  abort();
+});
+    
+process.on('exit', function (code, signal) {
+  abort();
 });
 

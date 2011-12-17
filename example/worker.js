@@ -3,7 +3,7 @@
  */
 
 // import Worker class.
-var Worker = require('hello-work').Worker;
+var Worker = require('../lib/hello-work').Worker;
 
 
 // create worker instace.
@@ -23,9 +23,17 @@ worker.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
     // ns: '/', // if namespace do not specific, default namespace is '/'
     func: 'add',
   }, function (job) {
+    console.log('add : assigned -> %j', job);
     return job.args.a + job.args.b;
   });
 
+  worker.regist({
+    ns: '/ns1/',
+    func: 'sub'
+  }, function (job) {
+    console.log('sub: assigned -> %j', job);
+    return job.args.a - job.args.b;
+  });
 
   // timeout sample.
   worker.regist({
@@ -44,6 +52,7 @@ worker.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
 
   // error sample.
   worker.regist({ func: 'mul' }, function (job) {
+    console.log('mul: assigned -> %j', job);
     if (!job.args.a || !job.args.b) {
       throw new Error('Invalid Parameter');
     }
@@ -63,11 +72,26 @@ worker.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
 
 });
 
-
-process.on('exit', function (code, signal) {
+function abort () {
   // disconnect from server.
   worker.disconnect(function () { // on('disconnect', function () { ... });
     console.log('disconnect');
   });
+}
+
+process.on('SIGINT', function () {
+  abort();
+});
+
+process.on('SIGQUIT', function () {
+  abort();
+});
+
+process.on('SIGTERM', function () {
+  abort();
+});
+
+process.on('exit', function (code, signal) {
+  abort();
 });
 
