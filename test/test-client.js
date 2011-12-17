@@ -127,6 +127,7 @@ function whenOccuredEventOnJob (do_opts, regist_opts, regist_cb, event_name, tar
                   console.log('client submit ...');
                   setTimeout(function () {
                     client.do(do_opts, function (job) {
+                      console.log('... client submit done');
                       try {
                         if (err) {
                           promise.emit('error', err);
