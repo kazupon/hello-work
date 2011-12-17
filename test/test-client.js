@@ -721,8 +721,9 @@ suite.addBatch({
 })).addBatch(
   whenOccuredEventOnJob({
     func: 'add', args: { a: 1, b: 1 } }, {
-    func: 'add' }, function (job) {
-      return job.args.a + job.args.b;
+    func: 'add' }, function (job, done) {
+      //return job.args.a + job.args.b;
+      done(job.args.a + job.args.b);
     }, 'complete', {
     'should returned `2` value response': function (topic) {
       assert.equal(topic.result, 2);
@@ -731,8 +732,9 @@ suite.addBatch({
 ).addBatch(
   whenOccuredEventOnJob({
     ns: '/hoge/', func: 'add', args: { a: 1, b: 1 } }, {
-    ns: '/hoge/', func: 'add' }, function (job) {
-      return job.args.a + job.args.b;
+    ns: '/hoge/', func: 'add' }, function (job, done) {
+      //return job.args.a + job.args.b;
+      done(job.args.a + job.args.b);
     }, 'complete', {
     'should returned `2` value response': function (topic) {
       assert.equal(topic.result, 2);
@@ -741,8 +743,9 @@ suite.addBatch({
 ).addBatch(
   whenOccuredEventOnJob({
     func: 'getReturnNull', args: { a: 1, b: 1 } }, {
-    func: 'getReturnNull' }, function (job) {
-      return null;
+    func: 'getReturnNull' }, function (job, done) {
+      //return null;
+      done(null);
     }, 'complete', {
     'should returned `null` value response': function (topic) {
       assert.isNull(topic.result);
@@ -751,8 +754,9 @@ suite.addBatch({
 ).addBatch(
   whenOccuredEventOnJob({
     func: 'getReturnObject', args: { a: 1, b: 1 } }, {
-    func: 'getReturnObject' }, function (job) {
-      return { hoge: 'hoge' };
+    func: 'getReturnObject' }, function (job, done) {
+      //return { hoge: 'hoge' };
+      done({ hoge: 'hoge' });
     }, 'complete', {
     'should returned `object` value response': function (topic) {
       assert.isObject(topic.result);
@@ -762,8 +766,9 @@ suite.addBatch({
 ).addBatch(
   whenOccuredEventOnJob({
     func: 'getReturnUndefined', args: { a: 1, b: 1 } }, {
-    func: 'getReturnUndefined' }, function (job) {
-      return undefined;
+    func: 'getReturnUndefined' }, function (job, done) {
+      //return undefined;
+      done(undefined);
     }, 'complete', {
     'should returned `undefined` value response': function (topic) {
       assert.isUndefined(topic.result);
@@ -772,8 +777,9 @@ suite.addBatch({
 ).addBatch(
   whenOccuredEventOnJob({
     func: 'getReturnString', args: { a: 1, b: 1 } }, {
-    func: 'getReturnString' }, function (job) {
-      return 'hello';
+    func: 'getReturnString' }, function (job, done) {
+      //return 'hello';
+      done('hello');
     }, 'complete', {
     'should returned `hello` value response': function (topic) {
       assert.equal(topic.result, 'hello');
@@ -782,8 +788,9 @@ suite.addBatch({
 ).addBatch(
   whenOccuredEventOnJob({
     func: 'getReturnArray', args: { a: 1, b: 1 } }, {
-    func: 'getReturnArray' }, function (job) {
-      return [1, 2, 3];
+    func: 'getReturnArray' }, function (job, done) {
+      //return [1, 2, 3];
+      done([1, 2, 3]);
     }, 'complete', {
     'should returned `[1, 2, 3]` value response': function (topic) {
       assert.deepEqual(topic.result, [1, 2, 3]);
@@ -792,8 +799,9 @@ suite.addBatch({
 ).addBatch(
   whenOccuredEventOnJob({
     func: 'getReturnFunction', args: { a: 1, b: 1 } }, {
-    func: 'getReturnFunction' }, function (job) {
-      return function () { console.log('hoge'); };
+    func: 'getReturnFunction' }, function (job, done) {
+      //return function () { console.log('hoge'); };
+      done(function () { console.log('hoge'); });
     }, 'complete', {
     'should returned `undefined` value response': function (topic) {
       assert.isUndefined(topic.result);
@@ -802,8 +810,9 @@ suite.addBatch({
 ).addBatch(
   whenOccuredEventOnJob({
     func: 'argsPatternString', args: { a: 'hello', b: 'world' } }, {
-    func: 'argsPatternString' }, function (job) {
-      return job.args.a + job.args.b;
+    func: 'argsPatternString' }, function (job, done) {
+      //return job.args.a + job.args.b;
+      done(job.args.a + job.args.b);
     }, 'complete', {
     'should returned `helloworld` value response': function (topic) {
       assert.equal(topic.result, 'helloworld');
@@ -812,8 +821,9 @@ suite.addBatch({
 ).addBatch(
   whenOccuredEventOnJob({
     func: 'argsPatternArray', args: { a: [1, 2, 3], b: [4, 5, 6] } }, {
-    func: 'argsPatternArray' }, function (job) {
-      return job.args.a.concat(job.args.b);
+    func: 'argsPatternArray' }, function (job, done) {
+      //return job.args.a.concat(job.args.b);
+      done(job.args.a.concat(job.args.b));
     }, 'complete', {
     'should returned `[1, 2, 3, 4, 5, 6]` value response': function (topic) {
       assert.deepEqual(topic.result, [1, 2, 3, 4, 5, 6]);
@@ -822,8 +832,9 @@ suite.addBatch({
 ).addBatch(
   whenOccuredEventOnJob({
     func: 'argsPatternObject', args: { a: { foo: 1 }, b: { bar: 2 } } }, {
-    func: 'argsPatternObject' }, function (job) {
-      return job.args.a.foo + job.args.b.bar;
+    func: 'argsPatternObject' }, function (job, done) {
+      //return job.args.a.foo + job.args.b.bar;
+      done(job.args.a.foo + job.args.b.bar);
     }, 'complete', {
     'should returned `3` value response': function (topic) {
       assert.equal(topic.result, 3);
@@ -831,8 +842,19 @@ suite.addBatch({
   })
 ).addBatch(
   whenOccuredEventOnJob({
+    func: 'returnError', args: { a: 1, b: 1 } }, {
+    func: 'returnError' }, function (job, done) {
+      done(new Error('Hoge Error'));;
+    }, 'fail', {
+    'should returned `Error` value response': function (topic) {
+      assert.instanceOf(topic.err, Error);
+      assert.equal(topic.err.message, 'Hoge Error');
+    },
+  })
+).addBatch(
+  whenOccuredEventOnJob({
     func: 'raiseError', args: { a: 1, b: 1 } }, {
-    func: 'raiseError' }, function (job) {
+    func: 'raiseError' }, function (job, done) {
       throw new Error('Foo Error');
     }, 'fail', {
     'should returned `Error` value response': function (topic) {
@@ -969,6 +991,110 @@ suite.addBatch({
         console.log('agent stop');
         cb();
       });
+    }
+  }
+}).addBatch({
+  'agent `start`,': {
+    topic: function () {
+      var agent = new Agent();
+      return emitter(function (promise) {
+        agent.start(20000, function () {
+          promise.emit('success', agent);
+        });
+      });
+    },
+    teardown: function (agent) {
+      agent.stop(this.callback.bind(this));
+    },
+    'worker `connect`,': {
+      topic: function (agent) {
+        var worker = new Worker();
+        return emitter(function (promise) {
+          worker.connect(function (err) {
+            promise.emit('success', worker); 
+          });
+        });
+      },
+      teardown: function (worker) {
+        worker.disconnect(this.callback.bind(this));
+      },
+      'client `connect`,': {
+        topic: function (worker, agent) {
+          var client = new Client();
+          return emitter(function (promise) {
+            client.connect(function (err) {
+              promise.emit('success', client);
+            });
+          });
+        },
+        teardown: function (client) {
+          client.disconnect(this.callback.bind(this));
+        },
+        'worker `regist`': {
+          topic: function (client, worker, agent) {
+            var result = [];
+            return emitter(function (promise) {
+              worker.regist({ func: 'add' }, function (job, done) {
+                var ret = job.args.a + job.args.b;
+                result.push(ret);
+                done(ret);
+              });
+              promise.emit('success', result);
+            });
+          },
+          'create job': {
+            topic: function (result1, client, worker, agent) {
+              return function (n) {
+                return emitter(function (promise) {
+                  var result = [];
+                  var counter = 0;
+                  for (var i = 0; i < n; i++) {
+                    client.do({
+                      func: 'add',
+                      args: {
+                        a: Math.floor(Math.random() * 10),
+                        b: Math.floor(Math.random() * 10)
+                      }
+                    }, function (job) {
+                      job.on('complete', function (res) {
+                        counter++;
+                        result.push(res.result);
+                        if (counter === n) {
+                          promise.emit('success', result);
+                        }
+                      });
+                    });
+                  }
+                });
+              };
+            },
+            '5 times': {
+              topic: function (parent) {
+                return parent(5);
+              },
+              'should be `5` result': function (err, result) {
+                assert.lengthOf(result, 5);
+              }
+            },
+            '50 times': {
+              topic: function (parent) {
+                return parent(50);
+              },
+              'should be `50` result': function (err, result) {
+                assert.lengthOf(result, 50);
+              }
+            },
+            '100 times': {
+              topic: function (parent) {
+                return parent(100);
+              },
+              'should be `100` result': function (err, result) {
+                assert.lengthOf(result, 100);
+              }
+            }
+          }
+        }
+      }
     }
   }
 }).export(module);

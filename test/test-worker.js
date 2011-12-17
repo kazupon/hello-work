@@ -53,8 +53,9 @@ function whenSubmitJobAndCallRegist (submit_opts, regist_opts, target) {
                     return;
                   }
                   console.log('worker regist ...');
-                  worker.regist(regist_opts, function (job) {
+                  worker.regist(regist_opts, function (job, done) {
                     promise.emit('success', job);
+                    done();
                   });
                   setTimeout(function () {
                     console.log('client submit ...');
@@ -134,8 +135,9 @@ suite.addBatch({
       topic: function (worker) {
         return emitter(function (promise) {
           try {
-            worker.regist({ func: 'add' }, function (job) {
+            worker.regist({ func: 'add' }, function (job, done) {
               promise.emit('success', job);
+              done();
             });
           } catch (e) {
             promise.emit('error', e);
@@ -177,8 +179,9 @@ suite.addBatch({
       },
       'with specify `all` options': {
         topic: function (parent) {
-          return parent({ ns: '/hoge', func: 'add' }, function (job) {
+          return parent({ ns: '/hoge', func: 'add' }, function (job, done) {
             console.log('hoge');
+            done();
           });
         },
         'should `not occur` error': function (topic) {
@@ -187,8 +190,9 @@ suite.addBatch({
       },
       'with specify `ns` abbrev options': {
         topic: function (parent) {
-          return parent({ func: 'add1' }, function (job) {
+          return parent({ func: 'add1' }, function (job, done) {
             console.log('hoge');
+            done();
           });
         },
         'should `not occur` error': function (topic) {
@@ -197,8 +201,9 @@ suite.addBatch({
       },
       'with specify `func` abbrev options': {
         topic: function (parent) {
-          return parent({ ns: '/' }, function (job) {
+          return parent({ ns: '/' }, function (job, done) {
             console.log('hoge');
+            done();
           });
         },
         'should `occur` error': function (topic) {
@@ -223,8 +228,9 @@ suite.addBatch({
       },
       'with specify `number` ns illegale option': {
         topic: function (parent) {
-          return parent({ ns: 2, func: 'add3' }, function (job) {
+          return parent({ ns: 2, func: 'add3' }, function (job, done) {
             console.log('hoge');
+            done();
           });
         },
         'should `not occur` error': function (topic) {
@@ -233,8 +239,9 @@ suite.addBatch({
       },
       'with specify `null` ns illegale option': {
         topic: function (parent) {
-          return parent({ ns: null, func: 'add4' }, function (job) {
+          return parent({ ns: null, func: 'add4' }, function (job, done) {
             console.log('hoge');
+            done();
           });
         },
         'should `not occur` error': function (topic) {
@@ -243,8 +250,9 @@ suite.addBatch({
       },
       'with specify `object` ns illegale option': {
         topic: function (parent) {
-          return parent({ ns: {}, func: 'add5' }, function (job) {
+          return parent({ ns: {}, func: 'add5' }, function (job, done) {
             console.log('hoge');
+            done();
           });
         },
         'should `not occur` error': function (topic) {
@@ -253,8 +261,9 @@ suite.addBatch({
       },
       'with specify `empty string` ns illegale option': {
         topic: function (parent) {
-          return parent({ ns: '', func: 'add6' }, function (job) {
+          return parent({ ns: '', func: 'add6' }, function (job, done) {
             console.log('hoge');
+            done();
           });
         },
         'should `not occur` error': function (topic) {
@@ -263,8 +272,9 @@ suite.addBatch({
       },
       'with specify `not path string` ns illegale option': {
         topic: function (parent) {
-          return parent({ ns: 'hoge', func: 'add7' }, function (job) {
+          return parent({ ns: 'hoge', func: 'add7' }, function (job, done) {
             console.log('hoge');
+            done();
           });
         },
         'should `not occur` error': function (topic) {
@@ -273,8 +283,9 @@ suite.addBatch({
       },
       'with specify `sub path string` ns option': {
         topic: function (parent) {
-          return parent({ ns: '/hoge/hoge', func: 'add8' }, function (job) {
+          return parent({ ns: '/hoge/hoge', func: 'add8' }, function (job, done) {
             console.log('hoge');
+            done();
           });
         },
         'should `not occur` error': function (topic) {
@@ -483,8 +494,9 @@ suite.addBatch({
       var worker = new Worker();
       return emitter(function (promise) {
         worker.connect(function (err) {
-          worker.regist({ func: 'add' }, function (job) {
+          worker.regist({ func: 'add' }, function (job, done) {
             console.log('create job !!');
+            done();
           });
           promise.emit('success', worker);
         });
@@ -494,7 +506,7 @@ suite.addBatch({
       topic: function (worker) {
         return emitter(function (promise) {
           try {
-            worker.regist({ func: 'add' }, function (job) {
+            worker.regist({ func: 'add' }, function (job, done) {
               console.log('create job !!');
             });
           } catch (e) {
@@ -519,8 +531,9 @@ suite.addBatch({
       var worker = new Worker();
       return emitter(function (promise) {
         worker.connect(function (err) {
-          worker.regist({ func: 'add' }, function (job) {
+          worker.regist({ func: 'add' }, function (job, done) {
             console.log('create job !!');
+            done();
           });
           promise.emit('success', worker);
         });
@@ -539,8 +552,9 @@ suite.addBatch({
           return emitter(function (promise) {
             worker.connect(function (err) {
               try {
-                worker.regist({ func: 'add' }, function (job) {
+                worker.regist({ func: 'add' }, function (job, done) {
                   console.log('create job !!');
+                  done();
                 });
                 promise.emit('success');
               } catch (e) {

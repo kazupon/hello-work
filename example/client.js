@@ -30,7 +30,7 @@ client.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
   }, function (job) {
     // complete event.
     job.on('complete', function (res) {
-      console.log('add complete : ' + res);
+      console.log('add complete : %j', res);
     });
   });
 
@@ -51,7 +51,7 @@ client.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
     });
     // complete event.
     job.on('complete', function (res) {
-      console.log('sub complete : ' + res);
+      console.log('sub complete : %j', res);
     });
   });
 
@@ -70,7 +70,7 @@ client.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
     });
     // complete event.
     job.on('complete', function (res) {
-      console.log('mul complete : ' + res);
+      console.log('mul complete : %j', res);
     });
   });
 

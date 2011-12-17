@@ -22,17 +22,15 @@ worker.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
   worker.regist({
     // ns: '/', // if namespace do not specific, default namespace is '/'
     func: 'add',
-  }, function (job) {
-    console.log('add : assigned -> %j', job);
-    return job.args.a + job.args.b;
+  }, function (job, done) {
+    done(job.args.a + job.args.b);
   });
 
   worker.regist({
     ns: '/ns1/',
     func: 'sub'
-  }, function (job) {
-    console.log('sub: assigned -> %j', job);
-    return job.args.a - job.args.b;
+  }, function (job, done) {
+    done(job.args.a - job.args.b);
   });
 
   // timeout sample.
@@ -51,12 +49,11 @@ worker.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
 
 
   // error sample.
-  worker.regist({ func: 'mul' }, function (job) {
-    console.log('mul: assigned -> %j', job);
+  worker.regist({ func: 'mul' }, function (job, done) {
     if (!job.args.a || !job.args.b) {
       throw new Error('Invalid Parameter');
     }
-    return job.args.a * job.args.b; 
+    done(job.args.a * job.args.b);
   });
 
 
@@ -66,8 +63,8 @@ worker.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
     // ...
     return new Buffer(256 * 256);
   }
-  worker.regist({ func: 'process_image' }, function (job) {
-    return procImage(job.args.image);
+  worker.regist({ func: 'process_image' }, function (job, done) {
+    done(procImage(job.args.image));
   });
 
 });
