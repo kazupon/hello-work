@@ -58,6 +58,7 @@ function withCases (cases) {
 }
 
 function withCommonTests (func) {
+  configure({ "appenders": [ { "type": "console" } ] });
   return withCases([
     [ func, true, [ 'hello world' ] ],
     [ func, true, [ 1 ] ],
@@ -118,8 +119,8 @@ suite.addBatch({
     },
     'with null': {
       topic: configure(null),
-      'should be failed': function (res) {
-        assert.ok(!res);
+      'should be success': function (res) {
+        assert.ok(res);
       },
     },
     // TODO: should be check other parameter patterns.

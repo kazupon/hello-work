@@ -3,6 +3,7 @@
 //
 // import(s)
 //
+
 var fs = require('fs');
 var path = require('path');
 var assert = require('../lib/util').assert;
@@ -14,13 +15,13 @@ var logger = require('../lib/logger');
 function parseOptions (args, callback) {
   var options = {
     port: 20000,
-    debug: true,
+    debug: false,
     log: '',
   };
 
   try {
-    if (process.env.NODE_ENV === 'production') {
-      options['debug'] = false;
+    if (process.env.NODE_ENV === 'dev') {
+      options.debug = true;
     }
 
     while (args.length) {
@@ -29,12 +30,12 @@ function parseOptions (args, callback) {
         case '-p':
         case '--port':
           if (arg = args.shift()) {
-            options['port'] = parseInt(arg, 10);
+            options.port = parseInt(arg, 10);
           }
           break;
         case '--log':
           if (arg = args.shift()) {
-            options['log'] = arg;
+            options.log = arg;
           }
           break;
         default:
@@ -51,6 +52,9 @@ function parseOptions (args, callback) {
 
 // logger specific settings
 function configureLogger (options, callback) {
+  
+  logger.configure(undefined);
+
   var appenders = [];
   if (options.debug) {
     appenders.push({
