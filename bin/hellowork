@@ -145,14 +145,9 @@ parseOptions(process.argv.slice(2), function (err, options) {
       process.exit(1);
     }
 
-    process.on('SIGINT', function () {
-      abort();
-    });
-    process.on('SIGQUIT', function () {
-      abort();
-    });
-    process.on('SIGTERM', function () {
-      abort();
+    var abort_events = ['SIGINT', 'SIGQUIT', 'SIGTERM'];
+    abort_events.forEach(function (event) {
+        process.on(event, abort.bind(null));
     });
 
     process.on('uncaughtException', function (err) {

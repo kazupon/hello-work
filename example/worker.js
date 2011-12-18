@@ -76,19 +76,8 @@ function abort () {
   });
 }
 
-process.on('SIGINT', function () {
-  abort();
-});
-
-process.on('SIGQUIT', function () {
-  abort();
-});
-
-process.on('SIGTERM', function () {
-  abort();
-});
-
-process.on('exit', function (code, signal) {
-  abort();
+var abort_events = ['SIGINT', 'SIGQUIT', 'SIGTERM', 'exit', 'uncaugthException'];
+abort_events.forEach(function (event) {
+    process.on(event, abort.bind(null));
 });
 

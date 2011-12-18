@@ -46,9 +46,9 @@ client.connect(/* { host: 'localhost', port: 20000, }, */function (err) { // on(
     timeout: 5000,
   }, function (job) {
     // timeout event.
-    job.on('timeout', function (code) { // TODO: code : 1 -> network? 2 -> task do not finsh?
-      console.log('sub timeout : ', code);
-    });
+    //job.on('timeout', function (code) { // TODO: code : 1 -> network? 2 -> task do not finsh?
+    //  console.log('sub timeout : ', code);
+    //});
     // complete event.
     job.on('complete', function (res) {
       console.log('sub complete : %j', res);
@@ -105,23 +105,8 @@ function abort () {
   });
 }
 
-process.on('SIGINT', function () {
-  abort();
-});
-
-process.on('SIGQUIT', function () {
-  abort();
-});
-
-process.on('SIGTERM', function () {
-  abort();
-});
-
-process.on('exit', function (code, signal) {
-  abort();
-});
-    
-process.on('exit', function (code, signal) {
-  abort();
+var abort_events = ['SIGINT', 'SIGQUIT', 'SIGTERM', 'exit', 'uncaugthException'];
+abort_events.forEach(function (event) {
+  process.on(event, abort.bind(null));
 });
 
