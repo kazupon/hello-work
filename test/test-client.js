@@ -133,11 +133,9 @@ function whenOccuredEventOnJob (do_opts, regist_opts, regist_cb, event_name, tar
                           promise.emit('error', err);
                           return;
                         }
-                        job.on('complete', function (res) {
-                          promise.emit('success', res);
-                        });
-                        job.on('fail', function (err) {
-                          promise.emit('success', err);
+                        job.on(event, function () {
+                          var args = Array.prototype.slice.call(arguments);
+                          promise.emit.apply(promise, ['success'].concat(args));
                         });
                         job.on('timeout', function (code) {
                           promise.emit('success', code);
@@ -831,6 +829,18 @@ suite.addBatch({
   })
 ).addBatch(
   whenOccuredEventOnJob({
+    func: 'processingEvent', args: { a: 1, b: 2 } }, {
+    func: 'processingEvent' }, function (job, done) {
+      setTimeout(function () {
+        done(job.args.a + job.args.b);
+      }, 2000);
+    }, 'processing', {
+    'should occur `processing` event': function (topic) {
+      assert.isUndefined(topic);
+    },
+  })
+).addBatch(
+  whenOccuredEventOnJob({
     func: 'returnError', args: { a: 1, b: 1 } }, {
     func: 'returnError' }, function (job, done) {
       done(new Error('Hoge Error'));;
@@ -854,15 +864,11 @@ suite.addBatch({
   /*
 ).addBatch(
   whenOccuredEventOnJob({
-    func: 'raiseTimeout', args: { a: 30 }, timeout: 1 }, {
-    func: 'raiseTimeout' }, function (job) {
-      var fib = function (i) {
-        if (i === 0 || i === 1) {
-          return i;
-        }
-        return fib(i - 1) + fib(i - 2);
-      };
-      return fib(job.args.a);
+    func: 'raiseTimeout', args: { a: 40 }, timeout: 1 }, {
+    func: 'raiseTimeout' }, function (job, done) {
+      setTimeout(function () {
+        done(job.args.a);
+      }, 5000);
     }, 'timeout', {
     'should returned `2` value response': function (topic) {
       assert.equal(topic.code, 2);
@@ -1065,22 +1071,22 @@ suite.addBatch({
                 assert.lengthOf(result, 5);
               }
             },
-            '50 times': {
-              topic: function (parent) {
-                return parent(50);
-              },
-              'should be `50` result': function (err, result) {
-                assert.lengthOf(result, 50);
-              }
-            },
-            '100 times': {
-              topic: function (parent) {
-                return parent(100);
-              },
-              'should be `100` result': function (err, result) {
-                assert.lengthOf(result, 100);
-              }
-            }
+            //'50 times': {
+            //  topic: function (parent) {
+            //    return parent(50);
+            //  },
+            //  'should be `50` result': function (err, result) {
+            //    assert.lengthOf(result, 50);
+            //  }
+            //},
+            //'100 times': {
+            //  topic: function (parent) {
+            //    return parent(100);
+            //  },
+            //  'should be `100` result': function (err, result) {
+            //    assert.lengthOf(result, 100);
+            //  }
+            //}
           }
         }
       }
