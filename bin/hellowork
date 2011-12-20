@@ -6,103 +6,138 @@
 
 var fs = require('fs');
 var path = require('path');
-var assert = require('../lib/util').assert;
-var Agent = require('../lib/agent').Agent;
-var logger = require('../lib/logger');
+
+
+// help message
+var help = [
+  "usage: hellowork [options]",
+  "",
+  "options:",
+  "  -p, --port [port]       Port number (default port 20000)",
+  "  -v, --verbose           Enable verbose output",
+  // TODO: should be silent mode.
+  //"  -s, --silent            Don't output",
+  "  -l, --log               Enable output to log file",
+  "  --version               Show version",
+  "  -h, --help              You're staring at it"
+].join('\n');
 
 
 // parse command line
-function parseOptions (args, callback) {
+function parseOptions (argv, cb) {
   var options = {
     port: 20000,
-    debug: false,
-    log: '',
+    verbose: false,
+    silent: false,
+    log: false
   };
 
   try {
-    if (process.env.NODE_ENV === 'dev') {
-      options.debug = true;
-    }
+    var err;
+    var arg;
+    var args = argv.slice(2);
 
     while (args.length) {
       var arg = args.shift();
       switch (arg) {
         case '-p':
         case '--port':
-          if (arg = args.shift()) {
+          if (args.length && (arg = args.shift()) && !isNaN(arg)) {
             options.port = parseInt(arg, 10);
           }
           break;
+        case '-l':
         case '--log':
-          if (arg = args.shift()) {
-            options.log = arg;
-          }
+          options.log = true;
+          break;
+        case '-s':
+        case '--silent':
+          // TODO: should be silent mode.
+          //options.slient = true;
+          break;
+        case '-v':
+        case '--verbose':
+          options.verbose = true; 
+          break;
+        case '-h':
+        case '--help':
+          err = 1;
+          break;
+        case '--version':
+          var version = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'))).version
+          console.log('hellowork %s', version);
+          err = 64;
           break;
         default:
+          err = 1;
           break;
       }
     }
 
-    callback(null, options);
+    err ? cb(err) : cb(null, options);
   } catch (e) {
-    callback(e);
+    console.error('occured error : %s', e.message);
+    err = 1;
+    cb(err);
   }
 }
 
-
 // logger specific settings
-function configureLogger (options, callback) {
-  
-  logger.configure(undefined);
-
+function configLogger (logger, flags, cb) {
+  var err;
   var appenders = [];
-  if (options.debug) {
-    appenders.push({
-      type: 'console',
-      layout: {
-        type: 'colouredLayout'
-      }
-    });
-  }
 
   try {
-    var ret;
-    if (options.log !== '') {
-      if (!path.existsSync(options.log)) {
-        var logger_dir = path.dirname(options.log);
-        if (!path.existsSync(logger_dir)) {
-          ret = fs.mkdirSync(logger_dir, 0777);
-          if (ret) {
-            callback({
-              message: 'Faild log directory error',
-              code: ret,
-            });
-            return;
-          }
+    // initialize
+    logger.configure(); 
+
+    if (!flags.log) {
+      appenders.push({
+        type: 'console',
+        layout: {
+          type: 'colouredLayout'
+        }
+      });
+    }
+
+    if (flags.log) {
+      var log_dir_path = path.join(__dirname, '../log');
+      var log_file_path = path.join(__dirname, '../log/hellowork.log');
+      if (!path.existsSync(log_dir_path)) {
+        if (fs.mkdirSync(log_dir_path, 0777)) {
+          cb({ message: 'Faild log directory error' });
+          return;
         }
       }
       appenders.push({
         type: 'file',
-        filename: options.log,
+        filename: log_file_path,
         maxLogSize: 1024 * 1024 * 5,
         backups: 3
       });
     }
 
-    if (appenders.length > 0) {
-      if (!logger.configure({ appenders: appenders, }) || 
-          !logger.setLevel((options.debug ? 'DEBUG' : 'INFO'))) {
-        callback({
-          message: 'Faild logger settings',
-        });
-        return;
-      }
+    if (!logger.configure({ appenders: appenders, })) {
+      cb({ message: 'Faild logger configuration' });
+      return;
     }
-    callback();
 
+    var level = 'INFO';
+    if (flags.silent) {
+      level = 'OFF';
+    } else if (flags.verbose) {
+      level = 'DEBUG';
+    }
+    if (!logger.setLevel(level)) {
+      cb({ message: 'Faild logger set level' });
+      return;
+    }
+
+    cb();
   } catch (e) {
     console.error(e.message);
-    callback(e);
+    err = 1;
+    cb(err);
   }
 }
 
@@ -111,56 +146,69 @@ function configureLogger (options, callback) {
 // main
 //
 
-parseOptions(process.argv.slice(2), function (err, options) {
-  if (err) {
-    process.exit(1);
-    return;
-  }
-  assert(options);
+if (require.main === module) {
 
-  configureLogger(options, function (err) {
+  parseOptions(process.argv, function (err, options) {
     if (err) {
-      process.exit(1);
+      err !== 64 && console.log(help);
+      process.exit(err);
       return;
     }
 
-    var agent = new Agent();
-    Object.defineProperty(agent, 'DEBUG', {
-      value: options.debug,
-    });
+    var logger = require('../lib/logger');
 
-    agent.start(options.port, function () {
-      logger.info('hellowork server listening on port %d ...', options.port); 
-    });
+    configLogger(logger, {
+      verbose: options.verbose,
+      silent: options.silent,
+      log: options.log
+    }, function (err) {
+      if (err) {
+        console.log(err.message);
+        process.exit(1);
+        return;
+      }
 
-    agent.on('error', function (err) {
-      logger.error('occred error : %s (%d)', err.message, err.code);
-      logger.debug('stack : %j', err.stack); 
-    });
+      var assert = require('../lib/util').assert;
+      var Agent = require('../lib/agent').Agent;
 
-    agent.on('stop', function () {
-      logger.info('... stop hellowork server');
-    });
+      var agent = new Agent();
+      Object.defineProperty(agent, 'DEBUG', {
+        value: options.debug,
+      });
 
-    process.stdin.resume();
+      agent.start(options.port, function () {
+        logger.info('hellowork server listening on port %d ...', options.port); 
+      });
 
-    var abort = function () {
-      agent.stop();
-      process.exit(1);
-    }
+      agent.on('error', function (err) {
+        logger.error('occred error : %s (%d)', err.message, err.code);
+        logger.debug('stack : %j', err.stack); 
+      });
 
-    var abort_events = ['SIGINT', 'SIGQUIT', 'SIGTERM'];
-    abort_events.forEach(function (event) {
-        process.on(event, abort.bind(null));
-    });
+      agent.on('stop', function () {
+        logger.info('... stop hellowork server');
+      });
 
-    process.on('uncaughtException', function (err) {
-      logger.fatal('Occured `uncaughtException` : %s \n %s', err.message, err.stack);
-      logger.fatal('Please report this bug.');
-      abort();
-    });
+      process.stdin.resume();
 
-  }); // end of configureLogger
+      var abort = function () {
+        agent.stop();
+        process.exit(1);
+      }
 
-}); // end of parseOptions
+      var abort_events = ['SIGINT', 'SIGQUIT', 'SIGTERM'];
+      abort_events.forEach(function (event) {
+          process.on(event, abort.bind(null));
+      });
+
+      process.on('uncaughtException', function (err) {
+        logger.fatal('Occured `uncaughtException` : %s \n %s', err.message, err.stack);
+        logger.fatal('Please report this bug.');
+        abort();
+      });
+
+    }); // end of configLogger
+
+  }); // end of parseOptions
+}
 
